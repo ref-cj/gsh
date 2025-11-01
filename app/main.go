@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -14,13 +15,23 @@ func main() {
 		if err != nil {
 			panic(err)
 		} else {
-			commandWithoutNewLine := command[:len(command)-1]
-			switch commandWithoutNewLine {
-			case "exit 0": // this feels like cheating
-				os.Exit(0)
+			commandFields := strings.Fields(command)
+			switch commandFields[0] {
+			case "exit":
+				exit(0)
+			case "echo":
+				echo(commandFields[1:])
 			default:
-				fmt.Printf("%s: command not found\n", commandWithoutNewLine)
+				fmt.Printf("%v: command not found\n", strings.Join(commandFields, ""))
 			}
 		}
 	}
+}
+
+func echo(params []string) {
+	fmt.Println(strings.Join(params, " "))
+}
+
+func exit(code int) {
+	os.Exit(code)
 }
