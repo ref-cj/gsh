@@ -55,7 +55,7 @@ func exit(code []string) {
 func toipe(fns []string) {
 	for _, t := range fns {
 		if _, ok := builtins[t]; ok {
-			fmt.Printf("%s is a builtin function\n", t)
+			fmt.Printf("%s is a shell builtin\n", t)
 		} else {
 			fmt.Printf("%s: not found\n", t)
 		}
