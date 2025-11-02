@@ -10,28 +10,22 @@ import (
 
 type builtin func([]string)
 
-var builtins = make(map[string]func([]string))
-
-// {
-// 	"echo": echo,
-// 	"exit": exit,
-// 	"type": toipe,
-// }
+var builtins = make(map[string]builtin)
 
 func main() {
 	builtins["echo"] = echo
 	builtins["exit"] = exit
 	builtins["type"] = toipe
+
 	for {
 		fmt.Fprint(os.Stdout, "$ ")
-
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			panic(err)
 		} else {
 			commandFields := strings.Fields(command)
-			if builtin, ok := builtins[commandFields[0]]; ok {
-				builtin(commandFields[1:])
+			if _builtin, ok := builtins[commandFields[0]]; ok {
+				_builtin(commandFields[1:])
 			} else {
 				fmt.Printf("%v: command not found\n", strings.Join(commandFields, ""))
 			}
