@@ -24,6 +24,7 @@ func main() {
 	builtins["exit"] = exit
 	builtins["type"] = toipe
 	builtins["pwd"] = pwd
+	builtins["cd"] = cd
 
 	for {
 		fmt.Fprint(os.Stdout, "\033[35m$\033[0m ")
@@ -60,6 +61,14 @@ func main() {
 
 func echo(params []string) {
 	fmt.Println(strings.Join(params, " "))
+}
+
+func cd(params []string) {
+	if dir, err := os.Stat(params[0]); err == nil && dir.IsDir() {
+		os.Chdir(params[0])
+		return
+	}
+	fmt.Printf("cd: %s: No such file or directory", params[0])
 }
 
 func pwd(params []string) {
