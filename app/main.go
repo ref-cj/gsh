@@ -68,7 +68,7 @@ func cd(params []string) {
 		os.Chdir(params[0])
 		return
 	}
-	fmt.Printf("cd: %s: No such file or directory", params[0])
+	fmt.Printf("cd: %s: No such file or directory\n", params[0])
 }
 
 func pwd(params []string) {
