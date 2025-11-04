@@ -28,6 +28,7 @@ func main() {
 		fmt.Println("-- debugging")
 		pathEnvVar := os.Getenv("PATH")
 		for p := range strings.SplitSeq(pathEnvVar, string(os.PathListSeparator)) {
+			fmt.Println(p)
 			if strings.HasPrefix(p, "/tmp") {
 				filesInDir, _ := os.ReadDir(p)
 				for file := range filesInDir {
