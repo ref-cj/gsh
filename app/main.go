@@ -44,10 +44,6 @@ func main() {
 	}
 }
 
-func isBinaryInPath(s string) bool {
-	return true
-}
-
 func echo(params []string) {
 	fmt.Println(strings.Join(params, " "))
 }
@@ -69,12 +65,12 @@ func toipe(fns []string) {
 			continue
 		}
 		if pathValue, exists := os.LookupEnv("PATH"); exists /*&& len(pathValue) > 0*/ {
-			paths := strings.Split(pathValue, string(os.PathListSeparator))
-			fmt.Printf("paths: %v", paths)
-			for _, p := range paths {
-				if isBinaryInPath(p) {
+			paths := strings.SplitSeq(pathValue, string(os.PathListSeparator))
+			for p := range paths {
+				fullFilePath := fmt.Sprintf("%s%c%s", p, os.PathListSeparator, t)
+				if _, err := os.Stat(fullFilePath); err == nil {
 					fmt.Printf("%s is %s%c%s", t, p, os.PathListSeparator, t)
-					continue
+					return
 				}
 			}
 			fmt.Printf("%s: not found\n", t)
