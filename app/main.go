@@ -23,8 +23,6 @@ func main() {
 	builtins["exit"] = exit
 	builtins["type"] = toipe
 
-	// testing a test, ignore
-
 	for {
 		fmt.Fprint(os.Stdout, "\033[35m$\033[0m ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -68,19 +66,26 @@ func toipe(fns []string) {
 			isBuiltin = true
 			continue
 		}
-		if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
-			paths := strings.SplitSeq(pathValue, string(os.PathListSeparator))
-			for p := range paths {
-				fullFilePath := fmt.Sprintf("%s%c%s", p, os.PathSeparator, t)
-				if fileInfo, err := os.Stat(fullFilePath); err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) {
-					fmt.Printf("%s is %s\n", t, fullFilePath)
-					isInPath = true
-					break
-				}
-			}
-			if !isBuiltin && !isInPath {
-				fmt.Printf("%s: not found\n", t)
+		if fullFilePath, exists := executableExistsInPath(t); exists {
+			fmt.Printf("%s is %s\n", t, fullFilePath)
+			isInPath = true
+			continue
+		}
+		if !isBuiltin && !isInPath {
+			fmt.Printf("%s: not found\n", t)
+		}
+	}
+}
+
+func executableExistsInPath(filename string) (fullFilePath string, exists bool) {
+	if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
+		paths := strings.SplitSeq(pathValue, string(os.PathListSeparator))
+		for p := range paths {
+			fullFilePath := fmt.Sprintf("%s%c%s", p, os.PathSeparator, filename)
+			if fileInfo, err := os.Stat(fullFilePath); err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) {
+				return fullFilePath, true
 			}
 		}
 	}
+	return "", false
 }
