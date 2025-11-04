@@ -23,6 +23,7 @@ func main() {
 	builtins["echo"] = echo
 	builtins["exit"] = exit
 	builtins["type"] = toipe
+	builtins["pwd"] = pwd
 
 	for {
 		fmt.Fprint(os.Stdout, "\033[35m$\033[0m ")
@@ -33,6 +34,7 @@ func main() {
 		} else {
 			commandFields := strings.Fields(command)
 			commandName := commandFields[0]
+
 			// is this a builtin?
 			if _builtin, ok := builtins[commandName]; ok {
 				_builtin(commandFields[1:])
@@ -40,7 +42,6 @@ func main() {
 			}
 
 			// maybe we can run it?
-
 			if _, exists := executableExistsInPath(commandName); exists {
 				cmd := exec.Command(commandName, commandFields[1:]...)
 				cmd.Stdin = os.Stdin
@@ -59,6 +60,15 @@ func main() {
 
 func echo(params []string) {
 	fmt.Println(strings.Join(params, " "))
+}
+
+func pwd(params []string) {
+	wd, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(generalError)
+	}
+	fmt.Println(wd)
 }
 
 func exit(code []string) {
