@@ -23,20 +23,19 @@ func main() {
 	builtins["exit"] = exit
 	builtins["type"] = toipe
 
-	fmt.Println("-- debugging")
-	pathEnvVar := os.Getenv("PATH")
-	for p := range strings.SplitSeq(pathEnvVar, string(os.PathListSeparator)) {
-		if strings.HasPrefix(p, "/tmp") {
-			filesInDir, _ := os.ReadDir(p)
-			for file := range filesInDir {
-				fmt.Println(file)
-			}
-		}
-	}
-	fmt.Println("-- /debugging")
-
 	for {
 		fmt.Fprint(os.Stdout, "$ ")
+		fmt.Println("-- debugging")
+		pathEnvVar := os.Getenv("PATH")
+		for p := range strings.SplitSeq(pathEnvVar, string(os.PathListSeparator)) {
+			if strings.HasPrefix(p, "/tmp") {
+				filesInDir, _ := os.ReadDir(p)
+				for file := range filesInDir {
+					fmt.Println(file)
+				}
+			}
+		}
+		fmt.Println("-- /debugging")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			fmt.Println("Could not read input from stdin")
