@@ -25,18 +25,20 @@ func main() {
 
 	for {
 		fmt.Fprint(os.Stdout, "$ ")
-		fmt.Println("-- debugging")
-		pathEnvVar := os.Getenv("PATH")
-		for p := range strings.SplitSeq(pathEnvVar, string(os.PathListSeparator)) {
-			fmt.Println(p)
-			if strings.HasPrefix(p, "/tmp") {
-				filesInDir, _ := os.ReadDir(p)
-				for file := range filesInDir {
-					fmt.Println(file)
+		if false {
+			fmt.Println("-- debugging")
+			pathEnvVar := os.Getenv("PATH")
+			for p := range strings.SplitSeq(pathEnvVar, string(os.PathListSeparator)) {
+				fmt.Println(p)
+				if strings.HasPrefix(p, "/tmp") {
+					filesInDir, _ := os.ReadDir(p)
+					for file := range filesInDir {
+						fmt.Println(file)
+					}
 				}
 			}
+			fmt.Println("-- /debugging")
 		}
-		fmt.Println("-- /debugging")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			fmt.Println("Could not read input from stdin")
@@ -82,7 +84,7 @@ func toipe(fns []string) {
 			paths := strings.SplitSeq(pathValue, string(os.PathListSeparator))
 			for p := range paths {
 				fullFilePath := fmt.Sprintf("%s%c%s", p, os.PathSeparator, t)
-				if _, err := os.Stat(fullFilePath); err == nil {
+				if fileInfo, err := os.Stat(fullFilePath); err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) {
 					fmt.Printf("%s is %s\n", t, fullFilePath)
 					isInPath = true
 					break
