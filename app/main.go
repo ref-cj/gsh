@@ -23,6 +23,18 @@ func main() {
 	builtins["exit"] = exit
 	builtins["type"] = toipe
 
+	fmt.Println("-- debugging")
+	pathEnvVar := os.Getenv("PATH")
+	for p := range strings.SplitSeq(pathEnvVar, string(os.PathListSeparator)) {
+		if strings.HasPrefix(p, "/tmp") {
+			filesInDir, _ := os.ReadDir(p)
+			for file := range filesInDir {
+				fmt.Println(file)
+			}
+		}
+	}
+	fmt.Println("-- /debugging")
+
 	for {
 		fmt.Fprint(os.Stdout, "$ ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
@@ -69,16 +81,6 @@ func toipe(fns []string) {
 		if pathValue, exists := os.LookupEnv("PATH"); exists /*&& len(pathValue) > 0*/ {
 			paths := strings.SplitSeq(pathValue, string(os.PathListSeparator))
 			for p := range paths {
-				// debugging
-				if strings.HasPrefix(p, "/tmp") && (t == "my_exe") {
-					fmt.Printf("looking for %s in %s", t, p)
-					files, _ := os.ReadDir(p)
-					for f := range files {
-						fmt.Println(f)
-					}
-					fmt.Println("------")
-				}
-				//
 				fullFilePath := fmt.Sprintf("%s%c%s", p, os.PathSeparator, t)
 				if _, err := os.Stat(fullFilePath); err == nil {
 					fmt.Printf("%s is %s\n", t, fullFilePath)
