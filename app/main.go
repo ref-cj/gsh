@@ -43,6 +43,7 @@ func main() {
 
 			if _, exists := executableExistsInPath(commandName); exists {
 				cmd := exec.Command(commandName, commandFields[1:]...)
+				cmd.Stdin = os.Stdin
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
 				cmd.Run()
