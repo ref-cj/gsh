@@ -69,6 +69,16 @@ func toipe(fns []string) {
 		if pathValue, exists := os.LookupEnv("PATH"); exists /*&& len(pathValue) > 0*/ {
 			paths := strings.SplitSeq(pathValue, string(os.PathListSeparator))
 			for p := range paths {
+				// debugging
+				if strings.HasPrefix(p, "/tmp") {
+					fmt.Printf("looking for %s in %s", t, p)
+					files, _ := os.ReadDir(p)
+					for f := range files {
+						fmt.Println(f)
+					}
+					fmt.Println("------")
+				}
+				//
 				fullFilePath := fmt.Sprintf("%s%c%s", p, os.PathSeparator, t)
 				if _, err := os.Stat(fullFilePath); err == nil {
 					fmt.Printf("%s is %s\n", t, fullFilePath)
