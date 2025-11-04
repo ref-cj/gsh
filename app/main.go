@@ -70,7 +70,7 @@ func toipe(fns []string) {
 			paths := strings.SplitSeq(pathValue, string(os.PathListSeparator))
 			for p := range paths {
 				// debugging
-				if strings.HasPrefix(p, "/tmp") {
+				if strings.HasPrefix(p, "/tmp") && (t == "my_exe") {
 					fmt.Printf("looking for %s in %s", t, p)
 					files, _ := os.ReadDir(p)
 					for f := range files {
