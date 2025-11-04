@@ -32,18 +32,22 @@ func main() {
 			os.Exit(commandUsageError)
 		} else {
 			commandFields := strings.Fields(command)
-
+			commandName := commandFields[0]
 			// is this a builtin?
-			if _builtin, ok := builtins[commandFields[0]]; ok {
+			if _builtin, ok := builtins[commandName]; ok {
 				_builtin(commandFields[1:])
 				continue
 			}
 
 			// maybe we can run it?
 
-			if fullFilePath, exists := executableExistsInPath(commandFields[0]); exists {
-				cmd := exec.Command(fullFilePath, commandFields[1:]...)
+			if _, exists := executableExistsInPath(commandName); exists {
+				cmd := exec.Command(commandName, commandFields[1:]...)
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
 				cmd.Run()
+				continue
+
 			}
 
 			// looks like we don't know what this is
