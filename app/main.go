@@ -23,6 +23,8 @@ func main() {
 	builtins["exit"] = exit
 	builtins["type"] = toipe
 
+	// testing a test, ignore
+
 	for {
 		fmt.Fprint(os.Stdout, "\033[35m$\033[0m ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
