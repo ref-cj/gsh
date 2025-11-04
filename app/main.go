@@ -24,7 +24,7 @@ func main() {
 	builtins["type"] = toipe
 
 	for {
-		fmt.Fprint(os.Stdout, "$ ")
+		fmt.Fprint(os.Stdout, "\033[35m$\033[0m ")
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			fmt.Println("Could not read input from stdin")
