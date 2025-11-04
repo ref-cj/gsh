@@ -60,20 +60,25 @@ func exit(code []string) {
 
 func toipe(fns []string) {
 	for _, t := range fns {
+		isBuiltin, isInPath := false, false
 		if _, ok := builtins[t]; ok {
 			fmt.Printf("%s is a shell builtin\n", t)
+			isBuiltin = true
 			continue
 		}
 		if pathValue, exists := os.LookupEnv("PATH"); exists /*&& len(pathValue) > 0*/ {
 			paths := strings.SplitSeq(pathValue, string(os.PathListSeparator))
 			for p := range paths {
-				fullFilePath := fmt.Sprintf("%s%c%s", p, os.PathListSeparator, t)
+				fullFilePath := fmt.Sprintf("%s%c%s", p, os.PathSeparator, t)
 				if _, err := os.Stat(fullFilePath); err == nil {
-					fmt.Printf("%s is %s%c%s", t, p, os.PathListSeparator, t)
-					return
+					fmt.Printf("%s is %s\n", t, fullFilePath)
+					isInPath = true
+					break
 				}
 			}
-			fmt.Printf("%s: not found\n", t)
+			if !isBuiltin && !isInPath {
+				fmt.Printf("%s: not found\n", t)
+			}
 		}
 	}
 }
