@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -36,6 +37,13 @@ func main() {
 			if _builtin, ok := builtins[commandFields[0]]; ok {
 				_builtin(commandFields[1:])
 				continue
+			}
+
+			// maybe we can run it?
+
+			if fullFilePath, exists := executableExistsInPath(commandFields[0]); exists {
+				cmd := exec.Command(fullFilePath, commandFields[1:]...)
+				cmd.Run()
 			}
 
 			// looks like we don't know what this is
