@@ -64,11 +64,26 @@ func echo(params []string) {
 }
 
 func cd(params []string) {
-	if dir, err := os.Stat(params[0]); err == nil && dir.IsDir() {
-		os.Chdir(params[0])
-		return
+	// not sure about special-casing this..
+	if params[0] == "~" {
+		if homeDir, err := os.UserHomeDir(); err != nil {
+			os.Exit(generalError)
+		} else {
+			params[0] = homeDir
+		}
 	}
-	fmt.Printf("cd: %s: No such file or directory\n", params[0])
+	if err := os.Chdir(params[0]); err != nil {
+		fmt.Printf("cd: %s: No such file or directory\n", params[0])
+		// I'm sad I can't use this. Tests don't like that err starts with a lowercase 'n'
+		/*
+			var pathError *os.PathError
+			if errors.As(err, &pathError) {
+				fmt.Printf("cd: %s: %s\n", pathError.Path, pathError.Err)
+			} else {
+				return
+			}
+		*/
+	}
 }
 
 func pwd(params []string) {
