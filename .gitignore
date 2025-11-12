@@ -1,2 +1,5 @@
 app/app
+bin/
 main
+CommandParser
+
