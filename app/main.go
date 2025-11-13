@@ -15,6 +15,8 @@ const (
 	invalidArguments  = 3
 )
 
+const InDebugMode = true
+
 type builtin func([]string)
 
 var builtins = make(map[string]builtin)
@@ -26,14 +28,39 @@ func main() {
 	builtins["pwd"] = pwd
 	builtins["cd"] = cd
 
+	const prompt = "\033[35m$\033[0m "
+
 	for {
-		fmt.Fprint(os.Stdout, "\033[35m$\033[0m ")
+		fmt.Print(prompt)
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			fmt.Println("Could not read input from stdin")
 			os.Exit(commandUsageError)
 		} else {
-			commandFields := strings.Fields(command)
+			var commandFields []string
+			commandRunes := []rune(command)
+
+			for len(command) > 0 {
+				startToken := GetNextTokenStart(commandRunes)
+				DbgPrintf("our new startToken: %v - [%c - %d ]\n", startToken, commandRunes[startToken.Position], startToken.Position)
+				var endToken Token
+				switch startToken.Type {
+				case Plain:
+					endToken, err = GetNextPlainTokenEnd(commandRunes[startToken.Position:])
+				case SingleQuote:
+					endToken, err = GetNextSingleQuoteTokenEnd(commandRunes[startToken.Position:])
+				default:
+					panic("uniplemented")
+				}
+				DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
+				commandFields = append(commandFields, command[startToken.Position:endToken.Position])
+				DbgPrintf("new commandFields: %v\n", commandFields)
+				command = command[endToken.Position+1:]
+				commandRunes = commandRunes[endToken.Position+1:]
+				DbgPrintf("new commandRunes: %v\n", commandRunes)
+				DbgPrintf("new command: %v\n", command)
+
+			}
 			commandName := commandFields[0]
 
 			// is this a builtin?
@@ -60,7 +87,7 @@ func main() {
 }
 
 func echo(params []string) {
-	fmt.Println(strings.Join(params, " "))
+	fmt.Println(strings.ReplaceAll(strings.Join(params, " "), "'", ""))
 }
 
 func cd(params []string) {
