@@ -15,7 +15,7 @@ const (
 	invalidArguments  = 3
 )
 
-const InDebugMode = true
+const InDebugMode = false
 
 type builtin func([]string)
 

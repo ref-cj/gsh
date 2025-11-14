@@ -47,5 +47,13 @@ func GetNextPlainTokenEnd(command []rune) (Token, error) {
 }
 
 func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
-	panic("not implemented")
+	for i, r := range command {
+		if r == '\'' && unicode.IsSpace(command[i+1]) {
+			return Token{Position: i + 1, Type: SingleQuote}, nil
+		} else {
+			continue
+		}
+	}
+	// we chouldn't find it
+	return Token{}, errors.New("fell off the edge chasing single quote")
 }
