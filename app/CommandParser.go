@@ -20,6 +20,7 @@ const (
 func GetNextTokenStart(command []rune) Token {
 	for i, r := range command {
 		if unicode.IsSpace(r) {
+			DbgPrintf("skipping something spacey: %c @ position: %d\n", r, i)
 			continue
 		}
 		switch {
@@ -35,10 +36,12 @@ func GetNextTokenStart(command []rune) Token {
 }
 
 func GetNextPlainTokenEnd(command []rune) (Token, error) {
+	DbgPrintf("going to search in %v for Plain end token\n", string(command))
 	for i, r := range command {
 		if unicode.IsSpace(r) {
 			return Token{Position: i, Type: Plain}, nil
 		} else {
+			DbgPrintf("not it: %c@%d\n", r, i)
 			continue
 		}
 	}

@@ -15,7 +15,7 @@ const (
 	invalidArguments  = 3
 )
 
-const InDebugMode = false
+const InDebugMode = true
 
 type builtin func([]string)
 
@@ -43,22 +43,24 @@ func main() {
 			for len(command) > 0 {
 				startToken := GetNextTokenStart(commandRunes)
 				DbgPrintf("our new startToken: %v - [%c - %d ]\n", startToken, commandRunes[startToken.Position], startToken.Position)
+				commandRunes = commandRunes[startToken.Position:]
+				command = command[startToken.Position:]
 				var endToken Token
 				switch startToken.Type {
 				case Plain:
-					endToken, err = GetNextPlainTokenEnd(commandRunes[startToken.Position:])
+					endToken, err = GetNextPlainTokenEnd(commandRunes)
 				case SingleQuote:
-					endToken, err = GetNextSingleQuoteTokenEnd(commandRunes[startToken.Position:])
+					endToken, err = GetNextSingleQuoteTokenEnd(commandRunes)
 				default:
 					panic("uniplemented")
 				}
 				DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
-				commandFields = append(commandFields, command[startToken.Position:endToken.Position])
+				commandFields = append(commandFields, command[:endToken.Position])
 				DbgPrintf("new commandFields: %v\n", commandFields)
 				command = command[endToken.Position+1:]
 				commandRunes = commandRunes[endToken.Position+1:]
 				DbgPrintf("new commandRunes: %v\n", commandRunes)
-				DbgPrintf("new command: %v\n", command)
+				DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "' '"))
 
 			}
 			commandName := commandFields[0]
