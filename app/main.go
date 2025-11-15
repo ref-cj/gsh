@@ -15,7 +15,7 @@ const (
 	invalidArguments  = 3
 )
 
-const InDebugMode = false
+var InDebugMode bool = false
 
 type builtin func([]string)
 
@@ -28,6 +28,9 @@ func main() {
 	builtins["pwd"] = pwd
 	builtins["cd"] = cd
 
+	if len(os.Args) >= 2 {
+		InDebugMode = (os.Args[1] == "true")
+	}
 	const prompt = "\033[35m$\033[0m "
 
 	for {
@@ -74,6 +77,7 @@ func main() {
 			// maybe we can run it?
 			if _, exists := executableExistsInPath(commandName); exists {
 				cmd := exec.Command(commandName, commandFields[1:]...)
+				DbgPrintf("running command %s with args %v\n", commandName, commandFields)
 				cmd.Stdin = os.Stdin
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
