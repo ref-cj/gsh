@@ -63,6 +63,8 @@ func main() {
 				}
 				DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
 				commandFields = append(commandFields, command[:endToken.Position])
+				// TODO: find a better of doing this. Possibly by starting the startToken post-quote and ending the end token the same way.. But for now, let's see if this works
+				commandFields[len(commandFields)-1] = strings.Trim(commandFields[len(commandFields)-1], "'")
 				DbgPrintf("new commandFields: %v\n", commandFields)
 				command = command[endToken.Position+1:]
 				commandRunes = commandRunes[endToken.Position+1:]
@@ -81,7 +83,7 @@ func main() {
 			// maybe we can run it?
 			if _, exists := executableExistsInPath(commandName); exists {
 				cmd := exec.Command(commandName, commandFields[1:]...)
-				DbgPrintf("running command %s with args %v\n", commandName, commandFields)
+				DbgPrintf("running command %s with args %v\n", commandName, commandFields[1:])
 				cmd.Stdin = os.Stdin
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr

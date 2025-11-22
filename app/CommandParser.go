@@ -26,9 +26,11 @@ func GetNextTokenStart(command []rune) Token {
 		switch {
 		case r == '\'':
 			return Token{Position: i, Type: SingleQuote}
-		case unicode.IsDigit(r), unicode.IsLetter(r):
+		// TODO: figure out a more generalized way of handling this
+		case unicode.IsDigit(r), unicode.IsLetter(r), r == '/', r == '.', r == '~':
 			return Token{Position: i, Type: Plain}
 		default:
+			DbgPrintf("eh? %c %d at position %d\n", r, r, i)
 			panic("for now")
 		}
 	}
