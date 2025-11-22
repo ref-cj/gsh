@@ -4,4 +4,4 @@ build:
 	@go build -o bin/app app/*.go
 
 run:
-	@bin/app true
+	@bin/app debug

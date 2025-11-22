@@ -29,7 +29,7 @@ func main() {
 	builtins["cd"] = cd
 
 	if len(os.Args) >= 2 {
-		InDebugMode = (os.Args[1] == "true")
+		InDebugMode = (os.Args[1] == "debug")
 	}
 	const prompt = "\033[35m$\033[0m "
 
