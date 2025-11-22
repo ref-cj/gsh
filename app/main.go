@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	noError           = 0
 	generalError      = 1
 	commandUsageError = 2
 	invalidArguments  = 3
@@ -129,6 +130,9 @@ func pwd(params []string) {
 }
 
 func exit(code []string) {
+	if len(code) == 0 {
+		os.Exit(noError)
+	}
 	exitCode, err := strconv.Atoi(code[0])
 	if err != nil {
 		fmt.Println("first (and only) argument to exit should be an integer")
