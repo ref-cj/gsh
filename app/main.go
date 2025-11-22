@@ -34,6 +34,9 @@ func main() {
 	}
 	const prompt = "\033[35m$\033[0m "
 
+	wd, _ := os.Getwd()
+	DbgPrintf("Current working directory: %s\n", wd)
+
 	for {
 		fmt.Print(prompt)
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
