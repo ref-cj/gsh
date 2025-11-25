@@ -30,11 +30,11 @@ func GetNextTokenStart(command []rune) Token {
 		case unicode.IsDigit(r), unicode.IsLetter(r), r == '/', r == '.', r == '~':
 			return Token{Position: i, Type: Plain}
 		default:
-			DbgPrintf("eh? %c %d at position %d\n", r, r, i)
-			panic("for now")
+			DbgPrintf("unsupported start token character %c (%d) at position %d\n", r, r, i)
+			panic("unsupported beginning for a start token")
 		}
 	}
-	panic("hit edn?")
+	panic("fell off the edge chasing a start token")
 }
 
 func GetNextPlainTokenEnd(command []rune) (Token, error) {
