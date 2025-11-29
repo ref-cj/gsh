@@ -58,18 +58,20 @@ func main() {
 					endToken, err = GetNextPlainTokenEnd(commandRunes)
 				case SingleQuote:
 					endToken, err = GetNextSingleQuoteTokenEnd(commandRunes)
+				case Termination:
+					DbgPrintln("Done!")
 				default:
-					panic("uniplemented")
+					panic("unimplemented token type")
 				}
 				DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
 				commandFields = append(commandFields, command[:endToken.Position])
 				// TODO: find a better of doing this. Possibly by starting the startToken post-quote and ending the end token the same way.. But for now, let's see if this works
-				commandFields[len(commandFields)-1] = strings.Trim(commandFields[len(commandFields)-1], "'")
+				// commandFields[len(commandFields)-1] = strings.Trim(commandFields[len(commandFields)-1], "'")
 				DbgPrintf("new commandFields: %v\n", commandFields)
-				command = command[endToken.Position+1:]
-				commandRunes = commandRunes[endToken.Position+1:]
+				command = command[endToken.Position:]
+				commandRunes = commandRunes[endToken.Position:]
 				DbgPrintf("new commandRunes: %v\n", commandRunes)
-				DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "' '"))
+				DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
 
 			}
 			commandName := commandFields[0]

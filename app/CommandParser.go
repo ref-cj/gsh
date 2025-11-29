@@ -7,15 +7,16 @@ import (
 
 type TokenType int
 
+const (
+	Plain TokenType = iota
+	SingleQuote
+	Termination
+)
+
 type Token struct {
 	Position int
 	Type     TokenType
 }
-
-const (
-	Plain TokenType = iota
-	SingleQuote
-)
 
 func GetNextTokenStart(command []rune) Token {
 	for i, r := range command {
@@ -24,6 +25,8 @@ func GetNextTokenStart(command []rune) Token {
 			continue
 		}
 		switch {
+		case r == 10 && len(command) == 1:
+			return Token{Position: i, Type: Termination}
 		case r == '\'':
 			return Token{Position: i, Type: SingleQuote}
 		// TODO: figure out a more generalized way of handling this
@@ -53,8 +56,8 @@ func GetNextPlainTokenEnd(command []rune) (Token, error) {
 
 func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
 	for i, r := range command {
-		if r == '\'' && unicode.IsSpace(command[i+1]) {
-			return Token{Position: i + 1, Type: SingleQuote}, nil
+		if r == '\'' {
+			return Token{Position: i, Type: SingleQuote}, nil
 		} else {
 			continue
 		}
