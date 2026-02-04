@@ -39,6 +39,7 @@ func main() {
 
 	for {
 		fmt.Print(prompt)
+		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new command?
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			fmt.Println("Could not read input from stdin")
@@ -48,32 +49,65 @@ func main() {
 			commandRunes := []rune(command)
 
 			for len(command) > 0 {
-				startToken := GetNextTokenStart(commandRunes)
+				startToken := GetNextStartToken(commandRunes)
 				DbgPrintf("our new startToken: %v - [%c - %d ]\n", startToken, commandRunes[startToken.Position], startToken.Position)
-				commandRunes = commandRunes[startToken.Position:]
-				command = command[startToken.Position:]
 				var endToken Token
 				switch startToken.Type {
+				// here, it looks like we are duplicating some functionality.
+				// BUT! handling of trimming of the command text/runes is different wrt the type of token we are processing
+				// I had some code that was de-duped but it was more complicated then it needed to be.
+				// so, not worth it..
 				case Plain:
+					// if we are parsing a plain token (e.g. "echo", or "type", or "justSomeWord")
+					// start of the token is the first letter. And we include the
+					commandRunes = commandRunes[startToken.Position:]
+					command = command[startToken.Position:]
 					endToken, err = GetNextPlainTokenEnd(commandRunes)
+					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
+					commandFields = append(commandFields, command[:endToken.Position])
+					DbgPrintf("new commandFields: %v\n", commandFields)
+					command = command[endToken.Position:]
+					DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
+					commandRunes = commandRunes[endToken.Position:]
+					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				case SingleQuote:
+					commandRunes = commandRunes[startToken.Position:]
+					command = command[startToken.Position:]
 					endToken, err = GetNextSingleQuoteTokenEnd(commandRunes)
+					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
+					// +1 because start position includes the beginning SingleQuote
+					commandFields = append(commandFields, command[startToken.Position:endToken.Position])
+					DbgPrintf("new commandFields: %v\n", commandFields)
+					// Start processing one char after the ending SingleQuote
+					command = command[endToken.Position+1:]
+					DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
+					commandRunes = commandRunes[endToken.Position+1:]
+					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				case Termination:
-					DbgPrintln("Done!")
+					commandRunes = commandRunes[startToken.Position:]
+					command = command[startToken.Position:]
+					endToken, err = Token{Position: 0, Type: Termination}, nil
+					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
+					// commandFields = append(commandFields, command[:endToken.Position])
+					DbgPrintf("new commandFields: %v\n", commandFields)
+					// command = command[endToken.Position:]
+					DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
+					// commandRunes = commandRunes[endToken.Position:]
+					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				default:
 					panic("unimplemented token type")
 				}
-				DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
-				commandFields = append(commandFields, command[:endToken.Position])
-				// TODO: find a better of doing this. Possibly by starting the startToken post-quote and ending the end token the same way.. But for now, let's see if this works
-				// commandFields[len(commandFields)-1] = strings.Trim(commandFields[len(commandFields)-1], "'")
-				DbgPrintf("new commandFields: %v\n", commandFields)
-				command = command[endToken.Position:]
-				commandRunes = commandRunes[endToken.Position:]
-				DbgPrintf("new commandRunes: %v\n", commandRunes)
-				DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
-
+				if endToken.Position != startToken.Position {
+					// command = command[endToken.Position:]
+					// DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
+					// commandRunes = commandRunes[endToken.Position:]
+					// DbgPrintf("new commandRunes: %v\n", commandRunes)
+				} else {
+					DbgPrintf("We are done,done\n")
+					break
+				}
 			}
+
 			commandName := commandFields[0]
 
 			// is this a builtin?

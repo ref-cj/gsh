@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"strings"
 	"unicode"
 )
 
@@ -18,20 +19,20 @@ type Token struct {
 	Type     TokenType
 }
 
-func GetNextTokenStart(command []rune) Token {
+func GetNextStartToken(command []rune) Token {
 	for i, r := range command {
-		if unicode.IsSpace(r) {
-			DbgPrintf("skipping something spacey: %c @ position: %d\n", r, i)
-			continue
-		}
 		switch {
 		case r == 10 && len(command) == 1:
 			return Token{Position: i, Type: Termination}
 		case r == '\'':
 			return Token{Position: i, Type: SingleQuote}
 		// TODO: figure out a more generalized way of handling this
+		// (or maybe we can separate path identifiers from words and numbers? so, less general? 🤔)
 		case unicode.IsDigit(r), unicode.IsLetter(r), r == '/', r == '.', r == '~':
 			return Token{Position: i, Type: Plain}
+		case unicode.IsSpace(r):
+			DbgPrintf("skipping something spacey: %c @ position: %d\n", r, i)
+			continue
 		default:
 			DbgPrintf("unsupported start token character %c (%d) at position %d\n", r, r, i)
 			panic("unsupported beginning for a start token")
@@ -41,7 +42,7 @@ func GetNextTokenStart(command []rune) Token {
 }
 
 func GetNextPlainTokenEnd(command []rune) (Token, error) {
-	DbgPrintf("going to search in %v for Plain end token\n", string(command))
+	DbgPrintf("going to search in %v for Plain end token\n", strings.ReplaceAll(string(command), "\n", "⏎"))
 	for i, r := range command {
 		if unicode.IsSpace(r) {
 			return Token{Position: i, Type: Plain}, nil
@@ -55,11 +56,22 @@ func GetNextPlainTokenEnd(command []rune) (Token, error) {
 }
 
 func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
-	for i, r := range command {
-		if r == '\'' {
-			return Token{Position: i, Type: SingleQuote}, nil
-		} else {
+	DbgPrintf("going to search in %v for SingleQuote end token\n", strings.ReplaceAll(string(command), "\n", "⏎"))
+	// skip the first character, it will be the SingleQuote starting token
+	for i := 1; i < len(command); i++ {
+		r := command[i]
+		if r != '\'' { // not a quote
 			continue
+		} else { // we found a single quote.. Check if we should stop searching
+			if i < len(command) && command[i+1] == '\'' {
+				// we are not at the end, and the next char is also a single quote
+				// meaning we are in "consecutive quoted strings" territory..
+				// we should just skip and keep going
+				i++
+				continue
+			} else {
+				return Token{Position: i, Type: SingleQuote}, nil
+			}
 		}
 	}
 	// we chouldn't find it
