@@ -57,6 +57,9 @@ func main() {
 				switch startToken.Type {
 				case Plain:
 					endToken, err = GetNextPlainTokenEnd(commandRunes)
+					if err != nil {
+						fmt.Printf("Error while getting Plain End Token: %s", err)
+					}
 					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
 					commandFields = append(commandFields, command[:endToken.Position])
 					DbgPrintf("new commandFields: %v\n", commandFields)
@@ -66,6 +69,9 @@ func main() {
 					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				case SingleQuote:
 					endToken, err = GetNextSingleQuoteTokenEnd(commandRunes)
+					if err != nil {
+						fmt.Printf("Error while getting SingleQuote End Token: %s", err)
+					}
 					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
 					// +1 because start position includes the beginning SingleQuote
 					commandFields = append(commandFields, command[startToken.Position:endToken.Position])
