@@ -16,8 +16,6 @@ const (
 	invalidArguments  = 3
 )
 
-var InDebugMode bool = false
-
 type builtin func([]string)
 
 var builtins = make(map[string]builtin)
@@ -29,9 +27,6 @@ func main() {
 	builtins["pwd"] = pwd
 	builtins["cd"] = cd
 
-	if len(os.Args) >= 2 {
-		InDebugMode = (os.Args[1] == "debug")
-	}
 	const prompt = "\033[35m$\033[0m "
 
 	wd, _ := os.Getwd()

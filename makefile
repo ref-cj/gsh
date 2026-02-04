@@ -1,7 +1,7 @@
 gogogo: build run
 
 build:
-	@go build -o bin/app app/*.go
+	@go build -tags debug -o bin/app ./app
 
 run:
-	@bin/app debug
+	@bin/app
