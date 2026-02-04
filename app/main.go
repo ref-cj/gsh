@@ -52,16 +52,10 @@ func main() {
 				startToken := GetNextStartToken(commandRunes)
 				DbgPrintf("our new startToken: %v - [%c - %d ]\n", startToken, commandRunes[startToken.Position], startToken.Position)
 				var endToken Token
+				commandRunes = commandRunes[startToken.Position:]
+				command = command[startToken.Position:]
 				switch startToken.Type {
-				// here, it looks like we are duplicating some functionality.
-				// BUT! handling of trimming of the command text/runes is different wrt the type of token we are processing
-				// I had some code that was de-duped but it was more complicated then it needed to be.
-				// so, not worth it..
 				case Plain:
-					// if we are parsing a plain token (e.g. "echo", or "type", or "justSomeWord")
-					// start of the token is the first letter. And we include the
-					commandRunes = commandRunes[startToken.Position:]
-					command = command[startToken.Position:]
 					endToken, err = GetNextPlainTokenEnd(commandRunes)
 					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
 					commandFields = append(commandFields, command[:endToken.Position])
@@ -71,8 +65,6 @@ func main() {
 					commandRunes = commandRunes[endToken.Position:]
 					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				case SingleQuote:
-					commandRunes = commandRunes[startToken.Position:]
-					command = command[startToken.Position:]
 					endToken, err = GetNextSingleQuoteTokenEnd(commandRunes)
 					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
 					// +1 because start position includes the beginning SingleQuote
@@ -84,8 +76,6 @@ func main() {
 					commandRunes = commandRunes[endToken.Position+1:]
 					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				case Termination:
-					commandRunes = commandRunes[startToken.Position:]
-					command = command[startToken.Position:]
 					endToken, err = Token{Position: 0, Type: Termination}, nil
 					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
 					// commandFields = append(commandFields, command[:endToken.Position])
