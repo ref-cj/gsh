@@ -60,7 +60,7 @@ func main() {
 					commandFields = append(commandFields, command[:endToken.Position])
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					command = command[endToken.Position:]
-					DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
+					DbgSanitizedPrintf("new command: %v\n", command)
 					commandRunes = commandRunes[endToken.Position:]
 					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				case SingleQuote:
@@ -70,31 +70,24 @@ func main() {
 						os.Exit(generalError)
 					}
 					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
-					// +1 because start position includes the beginning SingleQuote
 					commandFields = append(commandFields, command[startToken.Position:endToken.Position])
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					// Start processing one char after the ending SingleQuote
+					// +1 because start position includes the beginning SingleQuote
 					command = command[endToken.Position+1:]
-					DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
+					DbgSanitizedPrintf("new command: %v\n", command)
 					commandRunes = commandRunes[endToken.Position+1:]
 					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				case Termination:
 					endToken, err = Token{Position: 0, Type: Termination}, nil
 					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
-					// commandFields = append(commandFields, command[:endToken.Position])
 					DbgPrintf("new commandFields: %v\n", commandFields)
-					// command = command[endToken.Position:]
-					DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
-					// commandRunes = commandRunes[endToken.Position:]
+					DbgSanitizedPrintf("new command: %v\n", command)
 					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				default:
 					panic("unimplemented token type")
 				}
 				if endToken.Position != startToken.Position {
-					// command = command[endToken.Position:]
-					// DbgPrintf("new command: %v\n", strings.ReplaceAll(command, " ", "⍽"))
-					// commandRunes = commandRunes[endToken.Position:]
-					// DbgPrintf("new commandRunes: %v\n", commandRunes)
 				} else {
 					DbgPrintf("We are done,done\n")
 					break

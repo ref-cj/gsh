@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"strings"
 	"unicode"
 )
 
@@ -42,7 +41,7 @@ func GetNextStartToken(command []rune) Token {
 }
 
 func GetNextPlainTokenEnd(command []rune) (Token, error) {
-	DbgPrintf("going to search in %v for Plain end token\n", strings.ReplaceAll(string(command), "\n", "⏎"))
+	DbgSanitizedPrintf("going to search in %v for Plain end token\n", string(command))
 	for i, r := range command {
 		if unicode.IsSpace(r) {
 			return Token{Position: i, Type: Plain}, nil
@@ -56,7 +55,7 @@ func GetNextPlainTokenEnd(command []rune) (Token, error) {
 }
 
 func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
-	DbgPrintf("going to search in %v for SingleQuote end token\n", strings.ReplaceAll(string(command), "\n", "⏎"))
+	DbgSanitizedPrintf("going to search in %v for SingleQuote end token\n", string(command))
 	// skip the first character, it will be the SingleQuote starting token
 	for i := 1; i < len(command); i++ {
 		r := command[i]
