@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"unicode"
 )
 
@@ -16,6 +17,21 @@ const (
 type Token struct {
 	Position int
 	Type     TokenType
+}
+
+func (t Token) String() string {
+	var TokenShortName string
+	switch t.Type {
+	case Plain:
+		TokenShortName = "Pl"
+	case SingleQuote:
+		TokenShortName = "SQ"
+	case Termination:
+		TokenShortName = "Tx"
+	default:
+		TokenShortName = fmt.Sprintf("?%d?", t)
+	}
+	return fmt.Sprintf("{Pos: %d - Type: %s}", t.Position, TokenShortName)
 }
 
 func GetNextStartToken(command []rune) Token {

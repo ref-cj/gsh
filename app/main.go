@@ -45,7 +45,7 @@ func main() {
 
 			for len(command) > 0 {
 				startToken := GetNextStartToken(commandRunes)
-				DbgPrintf("our new startToken: %v - [%c - %d ]\n", startToken, commandRunes[startToken.Position], startToken.Position)
+				DbgPrintTokenln("our new startToken", startToken, commandRunes[startToken.Position])
 				var endToken Token
 				commandRunes = commandRunes[startToken.Position:]
 				command = command[startToken.Position:]
@@ -80,7 +80,7 @@ func main() {
 					DbgPrintf("new commandRunes: %v\n", commandRunes)
 				case Termination:
 					endToken, err = Token{Position: 0, Type: Termination}, nil
-					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
+					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					DbgSanitizedPrintf("new command: %v\n", command)
 					DbgPrintf("new commandRunes: %v\n", commandRunes)
