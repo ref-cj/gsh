@@ -56,7 +56,7 @@ func main() {
 						fmt.Printf("Error while getting Plain End Token: %s", err)
 						os.Exit(generalError)
 					}
-					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
+					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
 					commandFields = append(commandFields, command[:endToken.Position])
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					command = command[endToken.Position:]
@@ -69,7 +69,7 @@ func main() {
 						fmt.Printf("Error while getting SingleQuote End Token: %s", err)
 						os.Exit(generalError)
 					}
-					DbgPrintf("our new endToken: %v - [%c - %d ]\n", endToken, commandRunes[endToken.Position], endToken.Position)
+					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
 					commandFields = append(commandFields, command[startToken.Position:endToken.Position])
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					// Start processing one char after the ending SingleQuote
@@ -89,7 +89,7 @@ func main() {
 				}
 				if endToken.Position != startToken.Position {
 				} else {
-					DbgPrintf("We are done,done\n")
+					DbgPrintf("We are done, done. Nothing else to process.\n")
 					break
 				}
 			}
