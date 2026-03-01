@@ -18,6 +18,7 @@ func DbgPrintln(a any) {
 
 func DbgPrintTokenln(message string, token Token, runeAtPosition rune) {
 	sanitizedRune := runeAtPosition
+
 	switch runeAtPosition {
 	case ' ':
 		sanitizedRune = SpaceChar
