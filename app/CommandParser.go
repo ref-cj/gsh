@@ -11,6 +11,7 @@ type TokenType int
 const (
 	Plain TokenType = iota
 	SingleQuote
+	DoubleQuote
 	Termination
 )
 
@@ -26,6 +27,8 @@ func (t Token) String() string {
 		TokenShortName = "Pl"
 	case SingleQuote:
 		TokenShortName = "SQ"
+	case DoubleQuote:
+		TokenShortName = "DQ"
 	case Termination:
 		TokenShortName = "Tx"
 	default:
@@ -93,4 +96,30 @@ func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
 	}
 	// we chouldn't find it
 	return Token{}, errors.New("fell off the edge chasing single quote")
+}
+
+// TODO: we won't handle special escaping cases rn, this will be a simple dupe of GetNextSingleQuoteTokenEnd()
+// (so yeah, it's intentional.. and hopefully short lived)
+
+func GetNextDoubleQuoteTokenEnd(command []rune) (Token, error) {
+	DbgSanitizedPrintf("going to search in %v for DoubleQuote end token\n", string(command))
+	// skip the first character, it will be the DoubleQuote starting token
+	for i := 1; i < len(command); i++ {
+		r := command[i]
+		if r != '"' { // not a quote
+			continue
+		} else { // we found a double quote.. Check if we should stop searching
+			if i < len(command) && command[i+1] == '"' {
+				// we are not at the end, and the next char is also a double quote
+				// meaning we are in "consecutive quoted strings" territory..
+				// we should just skip and keep going
+				i++
+				continue
+			} else {
+				return Token{Position: i, Type: DoubleQuote}, nil
+			}
+		}
+	}
+	// we chouldn't find it
+	return Token{}, errors.New("fell off the edge chasing double quote")
 }

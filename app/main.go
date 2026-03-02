@@ -57,7 +57,11 @@ func main() {
 						os.Exit(generalError)
 					}
 					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
-					commandFields = append(commandFields, strings.ReplaceAll(command[:endToken.Position], "''", ""))
+					// consecutive quotes (single AND double) are stripped when handling plain tokens
+					currentCommand := command[:endToken.Position]
+					currentCommandNoSQ := strings.ReplaceAll(currentCommand, "''", "")
+					currentCommandNoDQ := strings.ReplaceAll(currentCommandNoSQ, "\"\"", "")
+					commandFields = append(commandFields, currentCommandNoDQ)
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					command = command[endToken.Position:]
 					DbgSanitizedPrintf("new command: %v\n", command)
@@ -70,10 +74,25 @@ func main() {
 						os.Exit(generalError)
 					}
 					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
-					commandFields = append(commandFields, strings.ReplaceAll(command[startToken.Position:endToken.Position], "'", ""))
+					commandFields = append(commandFields, strings.ReplaceAll(command[:endToken.Position], "'", ""))
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					// Start processing one char after the ending SingleQuote
 					// +1 because start position includes the beginning SingleQuote
+					command = command[endToken.Position+1:]
+					DbgSanitizedPrintf("new command: %v\n", command)
+					commandRunes = commandRunes[endToken.Position+1:]
+					DbgPrintf("new commandRunes: %v\n", commandRunes)
+				case DoubleQuote:
+					endToken, err = GetNextDoubleQuoteTokenEnd(commandRunes)
+					if err != nil {
+						fmt.Printf("Error while getting DoubleQuote End Token: %s", err)
+						os.Exit(generalError)
+					}
+					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
+					commandFields = append(commandFields, strings.ReplaceAll(command[:endToken.Position], "\"", ""))
+					DbgPrintf("new commandFields: %v\n", commandFields)
+					// Start processing one char after the ending DoubleQuote
+					// +1 because start position includes the beginning DoubleQuote
 					command = command[endToken.Position+1:]
 					DbgSanitizedPrintf("new command: %v\n", command)
 					commandRunes = commandRunes[endToken.Position+1:]
