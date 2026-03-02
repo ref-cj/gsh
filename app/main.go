@@ -57,7 +57,6 @@ func main() {
 						os.Exit(generalError)
 					}
 					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
-					// commandFields = append(commandFields, command[:endToken.Position])
 					commandFields = append(commandFields, strings.ReplaceAll(command[:endToken.Position], "''", ""))
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					command = command[endToken.Position:]
@@ -72,8 +71,6 @@ func main() {
 					}
 					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
 					commandFields = append(commandFields, strings.ReplaceAll(command[startToken.Position:endToken.Position], "'", ""))
-					// commandFields = append(commandFields, command[startToken.Position:endToken.Position])
-
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					// Start processing one char after the ending SingleQuote
 					// +1 because start position includes the beginning SingleQuote
@@ -123,7 +120,6 @@ func main() {
 }
 
 func echo(params []string) {
-	// fmt.Println(strings.ReplaceAll(strings.Join(params, " "), "'", ""))
 	fmt.Println(strings.Join(params, " "))
 }
 
