@@ -41,12 +41,14 @@ func GetNextStartToken(command []rune) Token {
 			return Token{Position: i, Type: Termination}
 		case r == '\'':
 			return Token{Position: i, Type: SingleQuote}
+		case r == '"':
+			return Token{Position: i, Type: DoubleQuote}
 		// TODO: figure out a more generalized way of handling this
 		// (or maybe we can separate path identifiers from words and numbers? so, less general? 🤔)
 		case unicode.IsDigit(r), unicode.IsLetter(r), r == '/', r == '.', r == '~':
 			return Token{Position: i, Type: Plain}
 		case unicode.IsSpace(r):
-			DbgPrintf("skipping something spacey: %c @ position: %d\n", r, i)
+			DbgPrintf("skipping something spacey: '%c' (0x%x - %d) @ position: %d\n", r, r, r, i)
 			continue
 		default:
 			DbgPrintf("unsupported start token character %c (%d) at position %d\n", r, r, i)
