@@ -18,7 +18,7 @@ const (
 
 type builtin func([]string)
 
-var builtins = make(map[string]builtin)
+var builtins = make(map[string]builtin, 5)
 
 func main() {
 	builtins["echo"] = echo
@@ -57,9 +57,8 @@ func main() {
 					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
 					// consecutive quotes (single AND double) are stripped when handling plain tokens
 					currentCommand := command[:endToken.Position]
-					currentCommandNoSQ := strings.ReplaceAll(currentCommand, "''", "")
-					currentCommandNoDQ := strings.ReplaceAll(currentCommandNoSQ, "\"\"", "")
-					commandFields = append(commandFields, currentCommandNoDQ)
+					cleanCommand := sanitizePlainToken(currentCommand)
+					commandFields = append(commandFields, cleanCommand)
 					DbgPrintf("new commandFields: %v\n", commandFields)
 					command = command[endToken.Position:]
 					DbgSanitizedPrintf("new command: %v\n", command)

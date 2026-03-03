@@ -48,7 +48,7 @@ func GetNextStartToken(command []rune) Token {
 			return Token{Position: i, Type: DoubleQuote}
 		// TODO: figure out a more generalized way of handling this
 		// (or maybe we can separate path identifiers from words and numbers? so, less general? 🤔)
-		case unicode.IsDigit(r), unicode.IsLetter(r), r == '/', r == '.', r == '~':
+		case unicode.IsDigit(r), unicode.IsLetter(r), r == '/', r == '.', r == '~', r == '\\':
 			return Token{Position: i, Type: Plain}
 		case unicode.IsSpace(r):
 			DbgPrintf("skipping something spacey: '%c' (0x%x - %d) @ position: %d\n", r, r, r, i)
@@ -63,13 +63,19 @@ func GetNextStartToken(command []rune) Token {
 
 func GetNextPlainTokenEnd(command []rune) (Token, error) {
 	DbgSanitizedPrintf("going to search in %v for Plain end token\n", string(command))
-	for i, r := range command {
+	for i := 0; i < len(command); i++ {
+		r := command[i]
+		if r == '\\' && command[i+1] == ' ' {
+			DbgSanitizedPrintf("Escaped space in [%s]", string(command[i-1:i+2]))
+			i++
+		}
 		if unicode.IsSpace(r) {
 			return Token{Position: i, Type: Plain}, nil
-		} else {
-			DbgPrintf("not it: %c@%d\n", r, i)
-			continue
 		}
+
+		// else
+		DbgPrintf("not it: %c@%d\n", r, i)
+		// continue
 	}
 	// we chouldn't find it
 	return Token{}, errors.New("fell off the edge chasing space")
