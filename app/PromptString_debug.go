@@ -15,7 +15,7 @@ const (
 	clrData2       = "\033[38;2;94;129;172m"
 	clrConnector   = "\033[38;2;129;161;193m"
 	space          = " "
-	prompt         = space + clrBookEnd + " 🙝" + reset + space + space +
+	prompt         = space + clrBookEnd + "🙝" + reset + space + space +
 		clrPunctuation + "[" + reset + clrShell + "gsh" + reset + clrPunctuation + "]" + reset + space +
 		clrData1 + "user" + reset + clrPunctuation + "@" + reset + clrData1 + "host" + reset + space +
 		clrConnector + "→" + reset + space + clrData2 + "~/current/path" + reset + space +
