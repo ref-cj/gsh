@@ -63,13 +63,21 @@ func GetNextStartToken(command []rune) Token {
 
 func GetNextPlainTokenEnd(command []rune) (Token, error) {
 	DbgSanitizedPrintf("going to search in %v for Plain end token\n", string(command))
+	// NOTE: this is bit of a hack. We need to reconsider this after revising the tokenisation of arguments
+	// But the way it works now is, we just ignore a space if we are in a quote.
+	// Although that's actually closer to how this will probably implemented at the end of the day,
+	// the rest of the system does not expect this to be happening here now.
+	inSingleQuotes := false
 	for i := 0; i < len(command); i++ {
 		r := command[i]
+		if r == '\'' {
+			inSingleQuotes = !inSingleQuotes
+		}
 		if r == '\\' && command[i+1] == ' ' {
 			DbgSanitizedPrintf("Escaped space in [%s]", string(command[i-1:i+2]))
 			i++
 		}
-		if unicode.IsSpace(r) {
+		if unicode.IsSpace(r) && !inSingleQuotes {
 			return Token{Position: i, Type: Plain}, nil
 		}
 
