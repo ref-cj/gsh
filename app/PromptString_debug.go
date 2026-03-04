@@ -5,7 +5,7 @@ package main
 
 // putting this here mainly to preserve the colours for future reference
 // stuff is hard-coded right now so it doesn't have much use other than aesthetics
-// gleefully stolen from Quantum Terminal example @ https://colormyshell.tcpip.wtf/
+// colours gleefully stolen from Quantum Terminal example @ https://colormyshell.tcpip.wtf/
 const (
 	reset          = "\033[0m"
 	clrBookEnd     = "\033[38;2;191;97;106m"
