@@ -31,7 +31,7 @@ func main() {
 	DbgPrintf("Current working directory: %s\n", wd)
 
 	for {
-		fmt.Print(prompt)
+		fmt.Print(GetPS1())
 		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new command?
 		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
