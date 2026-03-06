@@ -40,7 +40,7 @@ func getPathSegmentToShow() string {
 	// NOTE: this makes a possibly big string slice when the path is deep
 	// once we are happy with the amount of path segment we want to show
 	// maybe consider converting this to a loop that goes from the end of the path and counts slashes.
-	pathSegments := strings.Split(currentDir, "/")
+	pathSegments := strings.Split(currentDir, string(os.PathSeparator))
 	var shownPath string
 	if len(pathSegments) > numberOfPathSegmentsToShow {
 		shownPath += "⋯/"
