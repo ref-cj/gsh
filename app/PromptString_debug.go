@@ -5,6 +5,7 @@ package main
 
 import (
 	"os"
+	"os/user"
 	"strings"
 )
 
@@ -23,15 +24,31 @@ const (
 )
 const numberOfPathSegmentsToShow = 2
 
+var (
+	userName string
+	hostName string
+)
+
+func init() {
+	currentUser, err := user.Current()
+	if err != nil {
+		panic("couldn't get user")
+	}
+	userName = currentUser.Username
+	hostName, err = os.Hostname()
+	if err != nil {
+		panic("could not get hostname")
+	}
+}
+
 func GetPS1() string {
 	// NOTE: caching this and invalidating it in the `cd` builtin is attractive
 	// but when measured, this added 10µs. Maybe not worth the complexity and potential bugs?
-	shownPath := getPathSegmentToShow()
-
+	pathSegmentToShow := getPathSegmentToShow()
 	return space + clrBookEnd + "🙝" + reset + space + space +
 		clrPunctuation + "[" + reset + clrShell + "gsh" + reset + clrPunctuation + "]" + reset + space +
-		clrData1 + "user" + reset + clrPunctuation + "@" + reset + clrData1 + "host" + reset + space +
-		clrConnector + "→" + reset + space + clrData2 + shownPath + reset + space +
+		clrData1 + userName + reset + clrPunctuation + "@" + reset + clrData1 + hostName + reset + space +
+		clrConnector + "→" + reset + space + clrData2 + pathSegmentToShow + reset + space +
 		clrBookEnd + "🙞" + reset + space + space
 }
 
