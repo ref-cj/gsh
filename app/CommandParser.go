@@ -63,21 +63,16 @@ func GetNextStartToken(command []rune) Token {
 
 func GetNextPlainTokenEnd(command []rune) (Token, error) {
 	DbgSanitizedPrintf("going to search in %v for Plain end token\n", string(command))
-	// NOTE: this is bit of a hack. We need to reconsider this after revising the tokenisation of arguments
-	// But the way it works now is, we just ignore a space if we are in a quote.
-	// Although that's actually closer to how this will probably implemented at the end of the day,
-	// the rest of the system does not expect this to be happening here now.
-	inSingleQuotes := false
 	for i := 0; i < len(command); i++ {
 		r := command[i]
-		if r == '\'' {
-			inSingleQuotes = !inSingleQuotes
-		}
 		if r == '\\' && command[i+1] == ' ' {
 			DbgSanitizedPrintf("Escaped space in [%s]", string(command[i-1:i+2]))
 			i++
 		}
-		if unicode.IsSpace(r) && !inSingleQuotes {
+		if (r == '\'' || r == '"') && command[i-1] != '\\' { // if this char is un unescaped quote
+			return Token{Position: i, Type: Plain}, nil
+		}
+		if unicode.IsSpace(r) {
 			return Token{Position: i, Type: Plain}, nil
 		}
 
@@ -96,16 +91,8 @@ func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
 		r := command[i]
 		if r != '\'' { // not a quote
 			continue
-		} else { // we found a single quote.. Check if we should stop searching
-			if i < len(command) && command[i+1] == '\'' {
-				// we are not at the end, and the next char is also a single quote
-				// meaning we are in "consecutive quoted strings" territory..
-				// we should just skip and keep going
-				i++
-				continue
-			} else {
-				return Token{Position: i, Type: SingleQuote}, nil
-			}
+		} else {
+			return Token{Position: i, Type: SingleQuote}, nil
 		}
 	}
 	// we chouldn't find it

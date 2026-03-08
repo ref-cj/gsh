@@ -42,6 +42,7 @@ func main() {
 		} else {
 			var outputCommandFields []string
 			inputCommandRunes := []rune(inputCommand)
+			outputCommandBeingBuilt := ""
 
 			for len(inputCommand) > 0 {
 				startToken := GetNextStartToken(inputCommandRunes)
@@ -49,6 +50,7 @@ func main() {
 				var endToken Token
 				inputCommandRunes = inputCommandRunes[startToken.Position:]
 				inputCommand = inputCommand[startToken.Position:]
+				var cleanCommandSegment string
 
 				switch startToken.Type {
 				case Plain:
@@ -59,9 +61,9 @@ func main() {
 					}
 					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
 					// consecutive quotes (single AND double) are stripped when handling plain tokens
-					currentCommand := inputCommand[:endToken.Position]
-					cleanCommand := sanitizePlainToken(currentCommand)
-					outputCommandFields = append(outputCommandFields, cleanCommand)
+					dirtyCommandSegment := inputCommand[:endToken.Position]
+					cleanCommandSegment = sanitizePlainToken(dirtyCommandSegment)
+					outputCommandBeingBuilt += cleanCommandSegment
 					DbgPrintf("new commandFields: %v\n", outputCommandFields)
 					inputCommand = inputCommand[endToken.Position:]
 					DbgSanitizedPrintf("new command: %v\n", inputCommand)
@@ -74,7 +76,8 @@ func main() {
 						os.Exit(generalError)
 					}
 					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
-					outputCommandFields = append(outputCommandFields, strings.ReplaceAll(inputCommand[:endToken.Position], "'", ""))
+					cleanCommandSegment = strings.ReplaceAll(inputCommand[:endToken.Position], "'", "")
+					outputCommandBeingBuilt += cleanCommandSegment
 					DbgPrintf("new commandFields: %v\n", outputCommandFields)
 					// Start processing one char after the ending SingleQuote
 					// +1 because start position includes the beginning SingleQuote
@@ -108,6 +111,10 @@ func main() {
 					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
 				default:
 					panic("unimplemented token type")
+				}
+				if (endToken.Type != Termination) && (inputCommandRunes[0] == ' ' || inputCommandRunes[0] == '\n') {
+					outputCommandFields = append(outputCommandFields, outputCommandBeingBuilt)
+					outputCommandBeingBuilt = ""
 				}
 			}
 
