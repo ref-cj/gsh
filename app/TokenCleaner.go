@@ -6,14 +6,14 @@ import (
 
 var initDone = false
 
-var allPlainTokenReplacementRules = make(map[string]plainTokenReplacementRule, 4)
+var allPlainTokenReplacementRules = make(map[string]plainTokenReplacementRule, 6)
 
 type plainTokenReplacementRule struct {
 	reg         regexp.Regexp
 	replacement string
 }
 
-func _init() {
+func init() {
 	allPlainTokenReplacementRules["NoRepeatedSingleQuotes"] = plainTokenReplacementRule{*regexp.MustCompile("''"), ""}
 	allPlainTokenReplacementRules["NoRepeatedDoubleQuotes"] = plainTokenReplacementRule{*regexp.MustCompile(`""`), ""}
 	allPlainTokenReplacementRules["EscapedSpaceIsJustSpace"] = plainTokenReplacementRule{*regexp.MustCompile(`\\ `), " "}
@@ -24,9 +24,6 @@ func _init() {
 }
 
 func sanitizePlainToken(token string) string {
-	if !initDone {
-		_init()
-	}
 	for ruleName, rule := range allPlainTokenReplacementRules {
 		DbgPrintf("running rule: %s\n", ruleName)
 		DbgPrintf("before: %s\n", token)
