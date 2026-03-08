@@ -32,7 +32,7 @@ func (t Token) String() string {
 	case Termination:
 		TokenShortName = "Tx"
 	default:
-		TokenShortName = fmt.Sprintf("?%d?", t)
+		TokenShortName = fmt.Sprintf("?%d?", t.Type)
 	}
 	return fmt.Sprintf("{Pos: %d - Type: %s}", t.Position, TokenShortName)
 }
