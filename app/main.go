@@ -32,99 +32,100 @@ func main() {
 
 	for {
 		fmt.Print(GetPS1())
-		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new command?
-		command, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new inputCommand?
+		inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			fmt.Println("Could not read input from stdin")
 			os.Exit(commandUsageError)
 		} else {
-			var commandFields []string
-			commandRunes := []rune(command)
+			var outputCommandFields []string
+			inputCommandRunes := []rune(inputCommand)
 
-			for len(command) > 0 {
-				startToken := GetNextStartToken(commandRunes)
-				DbgPrintTokenln("our new startToken", startToken, commandRunes[startToken.Position])
+			for len(inputCommand) > 0 {
+				startToken := GetNextStartToken(inputCommandRunes)
+				DbgPrintTokenln("our new startToken", startToken, inputCommandRunes[startToken.Position])
 				var endToken Token
-				commandRunes = commandRunes[startToken.Position:]
-				command = command[startToken.Position:]
+				inputCommandRunes = inputCommandRunes[startToken.Position:]
+				inputCommand = inputCommand[startToken.Position:]
+
 				switch startToken.Type {
 				case Plain:
-					endToken, err = GetNextPlainTokenEnd(commandRunes)
+					endToken, err = GetNextPlainTokenEnd(inputCommandRunes)
 					if err != nil {
 						fmt.Printf("Error while getting Plain End Token: %s", err)
 						os.Exit(generalError)
 					}
-					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
+					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
 					// consecutive quotes (single AND double) are stripped when handling plain tokens
-					currentCommand := command[:endToken.Position]
+					currentCommand := inputCommand[:endToken.Position]
 					cleanCommand := sanitizePlainToken(currentCommand)
-					commandFields = append(commandFields, cleanCommand)
-					DbgPrintf("new commandFields: %v\n", commandFields)
-					command = command[endToken.Position:]
-					DbgSanitizedPrintf("new command: %v\n", command)
-					commandRunes = commandRunes[endToken.Position:]
-					DbgPrintf("new commandRunes: %v\n", commandRunes)
+					outputCommandFields = append(outputCommandFields, cleanCommand)
+					DbgPrintf("new commandFields: %v\n", outputCommandFields)
+					inputCommand = inputCommand[endToken.Position:]
+					DbgSanitizedPrintf("new command: %v\n", inputCommand)
+					inputCommandRunes = inputCommandRunes[endToken.Position:]
+					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
 				case SingleQuote:
-					endToken, err = GetNextSingleQuoteTokenEnd(commandRunes)
+					endToken, err = GetNextSingleQuoteTokenEnd(inputCommandRunes)
 					if err != nil {
 						fmt.Printf("Error while getting SingleQuote End Token: %s", err)
 						os.Exit(generalError)
 					}
-					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
-					commandFields = append(commandFields, strings.ReplaceAll(command[:endToken.Position], "'", ""))
-					DbgPrintf("new commandFields: %v\n", commandFields)
+					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
+					outputCommandFields = append(outputCommandFields, strings.ReplaceAll(inputCommand[:endToken.Position], "'", ""))
+					DbgPrintf("new commandFields: %v\n", outputCommandFields)
 					// Start processing one char after the ending SingleQuote
 					// +1 because start position includes the beginning SingleQuote
-					command = command[endToken.Position+1:]
-					DbgSanitizedPrintf("new command: %v\n", command)
-					commandRunes = commandRunes[endToken.Position+1:]
-					DbgPrintf("new commandRunes: %v\n", commandRunes)
+					inputCommand = inputCommand[endToken.Position+1:]
+					DbgSanitizedPrintf("new command: %v\n", inputCommand)
+					inputCommandRunes = inputCommandRunes[endToken.Position+1:]
+					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
 				case DoubleQuote:
-					endToken, err = GetNextDoubleQuoteTokenEnd(commandRunes)
+					endToken, err = GetNextDoubleQuoteTokenEnd(inputCommandRunes)
 					if err != nil {
 						fmt.Printf("Error while getting DoubleQuote End Token: %s", err)
 						os.Exit(generalError)
 					}
-					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
-					commandFields = append(commandFields, strings.ReplaceAll(command[:endToken.Position], "\"", ""))
-					DbgPrintf("new commandFields: %v\n", commandFields)
+					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
+					outputCommandFields = append(outputCommandFields, strings.ReplaceAll(inputCommand[:endToken.Position], "\"", ""))
+					DbgPrintf("new commandFields: %v\n", outputCommandFields)
 					// Start processing one char after the ending DoubleQuote
 					// +1 because start position includes the beginning DoubleQuote
-					command = command[endToken.Position+1:]
-					DbgSanitizedPrintf("new command: %v\n", command)
-					commandRunes = commandRunes[endToken.Position+1:]
-					DbgPrintf("new commandRunes: %v\n", commandRunes)
+					inputCommand = inputCommand[endToken.Position+1:]
+					DbgSanitizedPrintf("new command: %v\n", inputCommand)
+					inputCommandRunes = inputCommandRunes[endToken.Position+1:]
+					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
 				case Termination:
 					endToken, err = Token{Position: 0, Type: Termination}, nil
-					DbgPrintTokenln("our new endToken", endToken, commandRunes[endToken.Position])
+					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
 					// Consume the final \n at the end of the input
-					command = command[1:]
-					commandRunes = commandRunes[1:]
-					DbgPrintf("new commandFields: %v\n", commandFields)
-					DbgSanitizedPrintf("new command: %v\n", command)
-					DbgPrintf("new commandRunes: %v\n", commandRunes)
+					inputCommand = inputCommand[1:]
+					inputCommandRunes = inputCommandRunes[1:]
+					DbgPrintf("new commandFields: %v\n", outputCommandFields)
+					DbgSanitizedPrintf("new command: %v\n", inputCommand)
+					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
 				default:
 					panic("unimplemented token type")
 				}
 			}
 
 			DbgPrintf("We are done, done. Nothing else to process.\n")
-			commandName := commandFields[0]
+			outputCommandName := outputCommandFields[0]
 
 			// is this a builtin?
-			if _builtin, ok := builtins[commandName]; ok {
-				_builtin(commandFields[1:])
+			if _builtin, ok := builtins[outputCommandName]; ok {
+				_builtin(outputCommandFields[1:])
 				continue
 			}
 
 			// maybe we can run it?
-			if _, exists := executableExistsInPath(commandName); exists {
+			if _, exists := executableExistsInPath(outputCommandName); exists {
 				var crean []string
-				for _, s := range commandFields[1:] {
+				for _, s := range outputCommandFields[1:] {
 					crean = append(crean, strings.ReplaceAll(s, "'", ""))
 				}
-				cmd := exec.Command(commandName, crean...)
-				DbgPrintf("running command %s with args %v\n", commandName, crean)
+				cmd := exec.Command(outputCommandName, crean...)
+				DbgPrintf("running command %s with args %v\n", outputCommandName, crean)
 				cmd.Stdin = os.Stdin
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
@@ -134,7 +135,7 @@ func main() {
 			}
 
 			// looks like we don't know what this is
-			fmt.Printf("%v: command not found\n", strings.Join(commandFields, ""))
+			fmt.Printf("%v: command not found\n", strings.Join(outputCommandFields, ""))
 		}
 	}
 }
