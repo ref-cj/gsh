@@ -31,6 +31,8 @@ func main() {
 	DbgPrintf("Current working directory: %s\n", wd)
 
 	for {
+		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
+		// And maybe show it in debug mode by default?
 		fmt.Print(GetPS1())
 		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new inputCommand?
 		inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
