@@ -15,8 +15,8 @@ func DbgPrintTokenln(message string, token Token, runeAtPosition rune) {
 	// NOOP
 }
 
-func DbgSanitizedPrintln(message string) {
+func DbgSanitisedPrintln(message string) {
 }
 
-func DbgSanitizedPrintf(format string, dumpee string) {
+func DbgSanitisedPrintf(format string, dumpee string) {
 }
