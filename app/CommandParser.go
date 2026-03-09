@@ -104,14 +104,33 @@ func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
 
 func GetNextDoubleQuoteTokenEnd(command []rune) (Token, error) {
 	DbgSanitisedPrintf("going to search in %v for DoubleQuote end token\n", string(command))
-	// skip the first character, it will be the DoubleQuote starting token
-	for i := 1; i < len(command); i++ {
+	escaping := false
+	for i := 1; i < len(command); i++ { // skip the first character, it will be the DoubleQuote starting token
 		r := command[i]
-		if r != '"' { // not a quote
+		if r == '\\' {
+			if escaping {
+				escaping = false // consume the escape
+			} else {
+				DbgPrintln("will escape")
+				escaping = true
+			}
 			continue
-		} else {
-			return Token{Position: i + 1, Type: DoubleQuote}, nil
 		}
+		if r == '"' {
+			if escaping {
+				escaping = false // consume the escape
+				DbgPrintln("used up escape")
+				DbgPrintf("r: %c\n", r)
+				continue
+			} else {
+				return Token{Position: i + 1, Type: DoubleQuote}, nil
+			}
+		}
+		if r != '"' { // not a quote
+			DbgPrintf("DQ--not it r: %c\n", r)
+			continue
+		}
+
 	}
 	// we chouldn't find it
 	return Token{}, errors.New("fell off the edge chasing double quote")

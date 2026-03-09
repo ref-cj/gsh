@@ -6,7 +6,10 @@ import (
 	"strings"
 )
 
-var allPlainTokenReplacementRules = make(map[string]plainTokenReplacementRule, 6)
+var (
+	plainTokenReplacementRules       = make(map[string]plainTokenReplacementRule, 4)
+	doubleQuoteTokenReplacementRules = make(map[string]plainTokenReplacementRule, 4)
+)
 
 type plainTokenReplacementRule struct {
 	reg         regexp.Regexp
@@ -14,16 +17,21 @@ type plainTokenReplacementRule struct {
 }
 
 func init() {
-	// allPlainTokenReplacementRules["NoRepeatedSingleQuotes"] = plainTokenReplacementRule{*regexp.MustCompile("''"), ""}
-	// allPlainTokenReplacementRules["NoRepeatedDoubleQuotes"] = plainTokenReplacementRule{*regexp.MustCompile(`""`), ""}
-	allPlainTokenReplacementRules["EscapedSpaceIsJustSpace"] = plainTokenReplacementRule{*regexp.MustCompile(`\\ `), " "}
-	allPlainTokenReplacementRules["UnescapeSingleQuote"] = plainTokenReplacementRule{*regexp.MustCompile(`\\'`), "'"}
-	allPlainTokenReplacementRules["UnescapeDoubleQuote"] = plainTokenReplacementRule{*regexp.MustCompile(`\\"`), "\""}
-	allPlainTokenReplacementRules["UnescapeRegularChar"] = plainTokenReplacementRule{*regexp.MustCompile(`\\(\w)`), "$1"}
+	// Plain Token Rules
+	plainTokenReplacementRules["EscapedSpaceIsJustSpace"] = plainTokenReplacementRule{*regexp.MustCompile(`\\ `), " "}
+	plainTokenReplacementRules["UnescapeSingleQuote"] = plainTokenReplacementRule{*regexp.MustCompile(`\\'`), "'"}
+	plainTokenReplacementRules["UnescapeDoubleQuote"] = plainTokenReplacementRule{*regexp.MustCompile(`\\"`), "\""}
+	plainTokenReplacementRules["UnescapeRegularChar"] = plainTokenReplacementRule{*regexp.MustCompile(`\\(\w)`), "$1"}
+
+	// DoubleQuote Rules
+	doubleQuoteTokenReplacementRules["UnescapeBackslash"] = plainTokenReplacementRule{*regexp.MustCompile(`\\\\`), `\`}
+	doubleQuoteTokenReplacementRules["RemoveBeginningQuote"] = plainTokenReplacementRule{*regexp.MustCompile(`^"`), ``}
+	doubleQuoteTokenReplacementRules["RemoveEndingQuote"] = plainTokenReplacementRule{*regexp.MustCompile(`"$`), ``}
+	doubleQuoteTokenReplacementRules["UnescapeDoubleQuote"] = plainTokenReplacementRule{*regexp.MustCompile(`\\"`), `"`}
 }
 
 func sanitisePlainToken(token string) string {
-	for ruleName, rule := range allPlainTokenReplacementRules {
+	for ruleName, rule := range plainTokenReplacementRules {
 		DbgPrintf("running rule: %s\n", ruleName)
 		DbgPrintf("before: %s\n", token)
 		token = rule.reg.ReplaceAllString(token, rule.replacement)
@@ -49,10 +57,16 @@ func GetSanitisedCommandSegment(inputCommand string, endToken Token) string {
 	return cleanCommandSegment
 }
 
-func sanitiseDoubleQuoteToken(dirtyCommandSegment string) string {
-	return strings.ReplaceAll(dirtyCommandSegment, "\"", "")
+func sanitiseDoubleQuoteToken(token string) string {
+	for ruleName, rule := range doubleQuoteTokenReplacementRules {
+		DbgPrintf("running rule: %s\n", ruleName)
+		DbgPrintf("before: %s\n", token)
+		token = rule.reg.ReplaceAllString(token, rule.replacement)
+		DbgPrintf("after: %s\n", token)
+	}
+	return token
 }
 
-func sanitiseSingleQuoteToken(dirtyCommandSegment string) string {
-	return strings.ReplaceAll(dirtyCommandSegment, "'", "")
+func sanitiseSingleQuoteToken(token string) string {
+	return strings.ReplaceAll(token, "'", "")
 }
