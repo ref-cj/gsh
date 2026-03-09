@@ -107,12 +107,8 @@ func main() {
 
 			// maybe we can run it?
 			if _, exists := executableExistsInPath(outputCommandName); exists {
-				var crean []string
-				for _, s := range outputCommandFields[1:] {
-					crean = append(crean, strings.ReplaceAll(s, "'", ""))
-				}
-				cmd := exec.Command(outputCommandName, crean...)
-				DbgPrintf("running command %s with args %v\n", outputCommandName, crean)
+				cmd := exec.Command(outputCommandName, outputCommandFields[1:]...)
+				DbgPrintf("running command %s with args %v\n", outputCommandName, outputCommandFields[1:])
 				cmd.Stdin = os.Stdin
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
