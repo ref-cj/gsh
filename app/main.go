@@ -50,7 +50,6 @@ func main() {
 				var endToken Token
 				inputCommandRunes = inputCommandRunes[startToken.Position:]
 				inputCommand = inputCommand[startToken.Position:]
-				var cleanCommandSegment string
 
 				switch startToken.Type {
 				case Plain:
@@ -60,15 +59,7 @@ func main() {
 						os.Exit(generalError)
 					}
 					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
-					// consecutive quotes (single AND double) are stripped when handling plain tokens
-					dirtyCommandSegment := inputCommand[:endToken.Position]
-					cleanCommandSegment = sanitizePlainToken(dirtyCommandSegment)
-					outputCommandBeingBuilt += cleanCommandSegment
-					DbgPrintf("new commandFields: %v\n", outputCommandFields)
-					inputCommand = inputCommand[endToken.Position:]
-					DbgSanitizedPrintf("new command: %v\n", inputCommand)
-					inputCommandRunes = inputCommandRunes[endToken.Position:]
-					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
+
 				case SingleQuote:
 					endToken, err = GetNextSingleQuoteTokenEnd(inputCommandRunes)
 					if err != nil {
@@ -76,15 +67,7 @@ func main() {
 						os.Exit(generalError)
 					}
 					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
-					cleanCommandSegment = strings.ReplaceAll(inputCommand[:endToken.Position], "'", "")
-					outputCommandBeingBuilt += cleanCommandSegment
-					DbgPrintf("new commandFields: %v\n", outputCommandFields)
-					// Start processing one char after the ending SingleQuote
-					// +1 because start position includes the beginning SingleQuote
-					inputCommand = inputCommand[endToken.Position+1:]
-					DbgSanitizedPrintf("new command: %v\n", inputCommand)
-					inputCommandRunes = inputCommandRunes[endToken.Position+1:]
-					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
+
 				case DoubleQuote:
 					endToken, err = GetNextDoubleQuoteTokenEnd(inputCommandRunes)
 					if err != nil {
@@ -92,28 +75,23 @@ func main() {
 						os.Exit(generalError)
 					}
 					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
-					outputCommandFields = append(outputCommandFields, strings.ReplaceAll(inputCommand[:endToken.Position], "\"", ""))
-					DbgPrintf("new commandFields: %v\n", outputCommandFields)
-					// Start processing one char after the ending DoubleQuote
-					// +1 because start position includes the beginning DoubleQuote
-					inputCommand = inputCommand[endToken.Position+1:]
-					DbgSanitizedPrintf("new command: %v\n", inputCommand)
-					inputCommandRunes = inputCommandRunes[endToken.Position+1:]
-					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
+
 				case Termination:
-					endToken, err = Token{Position: 0, Type: Termination}, nil
-					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
-					// Consume the final \n at the end of the input
-					inputCommand = inputCommand[1:]
-					inputCommandRunes = inputCommandRunes[1:]
-					DbgPrintf("new commandFields: %v\n", outputCommandFields)
-					DbgSanitizedPrintf("new command: %v\n", inputCommand)
-					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
+					endToken, err = Token{Position: 1, Type: Termination}, nil
+					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position-1]) // termination is a special boy
+
 				default:
 					panic("unimplemented token type")
 				}
+				outputCommandBeingBuilt += GetSanitisedCommandSegment(inputCommand, endToken)
+				inputCommand = inputCommand[endToken.Position:]
+				inputCommandRunes = inputCommandRunes[endToken.Position:]
+				DbgSanitizedPrintf("new command: %v\n", inputCommand)
+				DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
+
 				if (endToken.Type != Termination) && (inputCommandRunes[0] == ' ' || inputCommandRunes[0] == '\n') {
 					outputCommandFields = append(outputCommandFields, outputCommandBeingBuilt)
+					DbgPrintf("new commandFields: %v\n", outputCommandFields)
 					outputCommandBeingBuilt = ""
 				}
 			}

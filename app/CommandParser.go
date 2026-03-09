@@ -92,7 +92,7 @@ func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
 		if r != '\'' { // not a quote
 			continue
 		} else {
-			return Token{Position: i, Type: SingleQuote}, nil
+			return Token{Position: i + 1, Type: SingleQuote}, nil
 		}
 	}
 	// we chouldn't find it
@@ -117,7 +117,7 @@ func GetNextDoubleQuoteTokenEnd(command []rune) (Token, error) {
 				i++
 				continue
 			} else {
-				return Token{Position: i, Type: DoubleQuote}, nil
+				return Token{Position: i + 1, Type: DoubleQuote}, nil
 			}
 		}
 	}

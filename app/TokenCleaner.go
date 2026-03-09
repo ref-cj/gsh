@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 )
-
-var initDone = false
 
 var allPlainTokenReplacementRules = make(map[string]plainTokenReplacementRule, 6)
 
@@ -14,13 +14,12 @@ type plainTokenReplacementRule struct {
 }
 
 func init() {
-	allPlainTokenReplacementRules["NoRepeatedSingleQuotes"] = plainTokenReplacementRule{*regexp.MustCompile("''"), ""}
-	allPlainTokenReplacementRules["NoRepeatedDoubleQuotes"] = plainTokenReplacementRule{*regexp.MustCompile(`""`), ""}
+	// allPlainTokenReplacementRules["NoRepeatedSingleQuotes"] = plainTokenReplacementRule{*regexp.MustCompile("''"), ""}
+	// allPlainTokenReplacementRules["NoRepeatedDoubleQuotes"] = plainTokenReplacementRule{*regexp.MustCompile(`""`), ""}
 	allPlainTokenReplacementRules["EscapedSpaceIsJustSpace"] = plainTokenReplacementRule{*regexp.MustCompile(`\\ `), " "}
 	allPlainTokenReplacementRules["UnescapeSingleQuote"] = plainTokenReplacementRule{*regexp.MustCompile(`\\'`), "'"}
 	allPlainTokenReplacementRules["UnescapeDoubleQuote"] = plainTokenReplacementRule{*regexp.MustCompile(`\\"`), "\""}
 	allPlainTokenReplacementRules["UnescapeRegularChar"] = plainTokenReplacementRule{*regexp.MustCompile(`\\(\w)`), "$1"}
-	initDone = true
 }
 
 func sanitizePlainToken(token string) string {
@@ -31,4 +30,29 @@ func sanitizePlainToken(token string) string {
 		DbgPrintf("after: %s\n", token)
 	}
 	return token
+}
+
+func GetSanitisedCommandSegment(inputCommand string, endToken Token) string {
+	dirtyCommandSegment := inputCommand[:endToken.Position]
+	var cleanCommandSegment string
+	switch endToken.Type {
+	case Plain:
+		cleanCommandSegment = sanitizePlainToken(dirtyCommandSegment)
+	case SingleQuote:
+		cleanCommandSegment = sanitizeSingleQuoteToken(dirtyCommandSegment)
+	case DoubleQuote:
+		cleanCommandSegment = sanitizeDoubleQuoteToken(dirtyCommandSegment)
+	case Termination:
+	default:
+		fmt.Printf("!! Don't know how to sanitise token: %v !!\n", endToken)
+	}
+	return cleanCommandSegment
+}
+
+func sanitizeDoubleQuoteToken(dirtyCommandSegment string) string {
+	return strings.ReplaceAll(dirtyCommandSegment, "\"", "")
+}
+
+func sanitizeSingleQuoteToken(dirtyCommandSegment string) string {
+	return strings.ReplaceAll(dirtyCommandSegment, "'", "")
 }
