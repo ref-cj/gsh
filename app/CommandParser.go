@@ -109,16 +109,8 @@ func GetNextDoubleQuoteTokenEnd(command []rune) (Token, error) {
 		r := command[i]
 		if r != '"' { // not a quote
 			continue
-		} else { // we found a double quote.. Check if we should stop searching
-			if i < len(command) && command[i+1] == '"' {
-				// we are not at the end, and the next char is also a double quote
-				// meaning we are in "consecutive quoted strings" territory..
-				// we should just skip and keep going
-				i++
-				continue
-			} else {
-				return Token{Position: i + 1, Type: DoubleQuote}, nil
-			}
+		} else {
+			return Token{Position: i + 1, Type: DoubleQuote}, nil
 		}
 	}
 	// we chouldn't find it
