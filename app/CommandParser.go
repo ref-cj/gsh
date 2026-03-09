@@ -62,11 +62,11 @@ func GetNextStartToken(command []rune) Token {
 }
 
 func GetNextPlainTokenEnd(command []rune) (Token, error) {
-	DbgSanitizedPrintf("going to search in %v for Plain end token\n", string(command))
+	DbgSanitisedPrintf("going to search in %v for Plain end token\n", string(command))
 	for i := 0; i < len(command); i++ {
 		r := command[i]
 		if r == '\\' && command[i+1] == ' ' {
-			DbgSanitizedPrintf("Escaped space in [%s]", string(command[i-1:i+2]))
+			DbgSanitisedPrintf("Escaped space in [%s]", string(command[i-1:i+2]))
 			i++
 		}
 		if (r == '\'' || r == '"') && command[i-1] != '\\' { // if this char is un unescaped quote
@@ -85,7 +85,7 @@ func GetNextPlainTokenEnd(command []rune) (Token, error) {
 }
 
 func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
-	DbgSanitizedPrintf("going to search in %v for SingleQuote end token\n", string(command))
+	DbgSanitisedPrintf("going to search in %v for SingleQuote end token\n", string(command))
 	// skip the first character, it will be the SingleQuote starting token
 	for i := 1; i < len(command); i++ {
 		r := command[i]
@@ -103,7 +103,7 @@ func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
 // (so yeah, it's intentional.. and hopefully short lived)
 
 func GetNextDoubleQuoteTokenEnd(command []rune) (Token, error) {
-	DbgSanitizedPrintf("going to search in %v for DoubleQuote end token\n", string(command))
+	DbgSanitisedPrintf("going to search in %v for DoubleQuote end token\n", string(command))
 	// skip the first character, it will be the DoubleQuote starting token
 	for i := 1; i < len(command); i++ {
 		r := command[i]

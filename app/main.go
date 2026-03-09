@@ -86,7 +86,7 @@ func main() {
 				outputCommandBeingBuilt += GetSanitisedCommandSegment(inputCommand, endToken)
 				inputCommand = inputCommand[endToken.Position:]
 				inputCommandRunes = inputCommandRunes[endToken.Position:]
-				DbgSanitizedPrintf("new command: %v\n", inputCommand)
+				DbgSanitisedPrintf("new command: %v\n", inputCommand)
 				DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
 
 				if (endToken.Type != Termination) && (inputCommandRunes[0] == ' ' || inputCommandRunes[0] == '\n') {

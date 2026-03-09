@@ -22,7 +22,7 @@ func init() {
 	allPlainTokenReplacementRules["UnescapeRegularChar"] = plainTokenReplacementRule{*regexp.MustCompile(`\\(\w)`), "$1"}
 }
 
-func sanitizePlainToken(token string) string {
+func sanitisePlainToken(token string) string {
 	for ruleName, rule := range allPlainTokenReplacementRules {
 		DbgPrintf("running rule: %s\n", ruleName)
 		DbgPrintf("before: %s\n", token)
@@ -37,11 +37,11 @@ func GetSanitisedCommandSegment(inputCommand string, endToken Token) string {
 	var cleanCommandSegment string
 	switch endToken.Type {
 	case Plain:
-		cleanCommandSegment = sanitizePlainToken(dirtyCommandSegment)
+		cleanCommandSegment = sanitisePlainToken(dirtyCommandSegment)
 	case SingleQuote:
-		cleanCommandSegment = sanitizeSingleQuoteToken(dirtyCommandSegment)
+		cleanCommandSegment = sanitiseSingleQuoteToken(dirtyCommandSegment)
 	case DoubleQuote:
-		cleanCommandSegment = sanitizeDoubleQuoteToken(dirtyCommandSegment)
+		cleanCommandSegment = sanitiseDoubleQuoteToken(dirtyCommandSegment)
 	case Termination:
 	default:
 		fmt.Printf("!! Don't know how to sanitise token: %v !!\n", endToken)
@@ -49,10 +49,10 @@ func GetSanitisedCommandSegment(inputCommand string, endToken Token) string {
 	return cleanCommandSegment
 }
 
-func sanitizeDoubleQuoteToken(dirtyCommandSegment string) string {
+func sanitiseDoubleQuoteToken(dirtyCommandSegment string) string {
 	return strings.ReplaceAll(dirtyCommandSegment, "\"", "")
 }
 
-func sanitizeSingleQuoteToken(dirtyCommandSegment string) string {
+func sanitiseSingleQuoteToken(dirtyCommandSegment string) string {
 	return strings.ReplaceAll(dirtyCommandSegment, "'", "")
 }

@@ -17,28 +17,28 @@ func DbgPrintln(a any) {
 }
 
 func DbgPrintTokenln(message string, token Token, runeAtPosition rune) {
-	sanitizedRune := runeAtPosition
+	sanitisedRune := runeAtPosition
 
 	switch runeAtPosition {
 	case ' ':
-		sanitizedRune = SpaceChar
+		sanitisedRune = SpaceChar
 	case '\n':
-		sanitizedRune = NewLineChar
+		sanitisedRune = NewLineChar
 	}
 
-	DbgPrintln(fmt.Sprintf("%s: %v : %c", message, token, sanitizedRune))
+	DbgPrintln(fmt.Sprintf("%s: %v : %c", message, token, sanitisedRune))
 }
 
-func sanitizeString(message string) string {
+func sanitiseString(message string) string {
 	withoutSpace := strings.ReplaceAll(message, " ", "⍽")
 	withoutNewLine := strings.ReplaceAll(withoutSpace, "\n", "⏎")
 	return withoutNewLine
 }
 
-func DbgSanitizedPrintln(message string) {
-	DbgPrintln(sanitizeString(message))
+func DbgSanitisedPrintln(message string) {
+	DbgPrintln(sanitiseString(message))
 }
 
-func DbgSanitizedPrintf(format string, dumpee string) {
-	DbgPrintf(format, sanitizeString(dumpee))
+func DbgSanitisedPrintf(format string, dumpee string) {
+	DbgPrintf(format, sanitiseString(dumpee))
 }
