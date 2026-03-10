@@ -11,7 +11,7 @@ func DbgPrintln(a any) {
 	// NOOP
 }
 
-func DbgPrintTokenln(message string, token Token, runeAtPosition rune) {
+func DbgPrintTokenln(message string, token IToken, runeAtPosition rune) {
 	// NOOP
 }
 

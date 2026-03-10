@@ -16,6 +16,12 @@ const (
 	invalidArguments  = 3
 )
 
+type redirections struct {
+	in  os.File
+	out os.File
+	err os.File
+}
+
 type builtin func([]string)
 
 var builtins = make(map[string]builtin, 5)
@@ -41,17 +47,19 @@ func main() {
 			os.Exit(commandUsageError)
 		} else {
 			var outputCommandFields []string
+			// var commandRedirections redirections
 			inputCommandRunes := []rune(inputCommand)
 			outputCommandBeingBuilt := ""
 
 			for len(inputCommand) > 0 {
 				startToken := GetNextStartToken(inputCommandRunes)
-				DbgPrintTokenln("our new startToken", startToken, inputCommandRunes[startToken.Position])
+				DbgPrintTokenln("our new startToken", startToken, inputCommandRunes[startToken.GetPosition()])
 				var endToken Token
-				inputCommandRunes = inputCommandRunes[startToken.Position:]
-				inputCommand = inputCommand[startToken.Position:]
+				processingRedirection := false
+				inputCommandRunes = inputCommandRunes[startToken.GetPosition():]
+				inputCommand = inputCommand[startToken.GetPosition():]
 
-				switch startToken.Type {
+				switch startToken.GetType() {
 				case Plain:
 					endToken, err = GetNextPlainTokenEnd(inputCommandRunes)
 					if err != nil {
@@ -76,6 +84,10 @@ func main() {
 					}
 					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
 
+				case Redirection:
+					processingRedirection = true
+					// commandRedirections = redirections{in: *os.Stdin}
+
 				case Termination:
 					endToken, err = Token{Position: 1, Type: Termination}, nil
 					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position-1]) // termination is a special boy
@@ -83,7 +95,11 @@ func main() {
 				default:
 					panic("unimplemented token type")
 				}
-				outputCommandBeingBuilt += GetSanitisedCommandSegment(inputCommand, endToken)
+				if processingRedirection {
+				} else {
+					outputCommandBeingBuilt += GetSanitisedCommandSegment(inputCommand, endToken)
+				}
+
 				inputCommand = inputCommand[endToken.Position:]
 				inputCommandRunes = inputCommandRunes[endToken.Position:]
 				DbgSanitisedPrintf("new command: %v\n", inputCommand)

@@ -16,7 +16,7 @@ func DbgPrintln(a any) {
 	fmt.Println(a)
 }
 
-func DbgPrintTokenln(message string, token Token, runeAtPosition rune) {
+func DbgPrintTokenln(message string, token IToken, runeAtPosition rune) {
 	sanitisedRune := runeAtPosition
 
 	switch runeAtPosition {

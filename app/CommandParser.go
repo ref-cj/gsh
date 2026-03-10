@@ -12,12 +12,53 @@ const (
 	Plain TokenType = iota
 	SingleQuote
 	DoubleQuote
+	Redirection
 	Termination
 )
+
+type IToken interface {
+	GetPosition() int
+	GetType() TokenType
+	String() string
+}
 
 type Token struct {
 	Position int
 	Type     TokenType
+}
+
+func (token Token) GetPosition() int {
+	return token.Position
+}
+
+func (token Token) GetType() TokenType {
+	return token.Type
+}
+
+func (redirectToken RedirectToken) GetPosition() int {
+	return redirectToken.Token.Position
+}
+
+func (redirectToken RedirectToken) GetType() TokenType {
+	return redirectToken.Token.Type
+}
+
+type RedirectType int
+
+const (
+	RedirectInput RedirectType = iota
+	RedirectOutput
+
+// RedirectError
+)
+
+type RedirectToken struct {
+	Token     Token
+	Direction RedirectType
+}
+
+func (t RedirectToken) String() string {
+	return "TEMPORARY!!"
 }
 
 func (t Token) String() string {
@@ -29,6 +70,8 @@ func (t Token) String() string {
 		TokenShortName = "SQ"
 	case DoubleQuote:
 		TokenShortName = "DQ"
+	case Redirection:
+		TokenShortName = "->"
 	case Termination:
 		TokenShortName = "Tx"
 	default:
@@ -37,7 +80,7 @@ func (t Token) String() string {
 	return fmt.Sprintf("{Pos: %d - Type: %s}", t.Position, TokenShortName)
 }
 
-func GetNextStartToken(command []rune) Token {
+func GetNextStartToken(command []rune) IToken {
 	for i, r := range command {
 		switch {
 		case r == 10 && len(command) == 1:
@@ -46,6 +89,9 @@ func GetNextStartToken(command []rune) Token {
 			return Token{Position: i, Type: SingleQuote}
 		case r == '"':
 			return Token{Position: i, Type: DoubleQuote}
+		case (r == '>' && command[i+1] == '>') || (unicode.IsDigit(r) && command[i+1] == '>'):
+			return RedirectToken{Token{i, Redirection}, RedirectOutput}
+
 		// TODO: figure out a more generalized way of handling this
 		// (or maybe we can separate path identifiers from words and numbers? so, less general? 🤔)
 		case unicode.IsDigit(r), unicode.IsLetter(r), r == '/', r == '.', r == '~', r == '\\':
