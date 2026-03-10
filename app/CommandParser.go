@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"unicode"
 )
 
@@ -48,17 +49,31 @@ type RedirectType int
 const (
 	RedirectInput RedirectType = iota
 	RedirectOutput
-
-// RedirectError
+	RedirectError
 )
 
 type RedirectToken struct {
-	Token     Token
-	Direction RedirectType
+	Token        Token
+	Direction    RedirectType
+	ShouldAppend bool
+	FileName     string
 }
 
 func (t RedirectToken) String() string {
-	return "TEMPORARY!!"
+	var directionString string
+	if t.Direction == RedirectInput {
+		directionString = "<--"
+	}
+	if t.Direction == RedirectOutput {
+		directionString = "-->"
+	}
+	if t.Direction == RedirectError {
+		directionString = "E->"
+	}
+	if t.ShouldAppend {
+		directionString += "+"
+	}
+	return fmt.Sprintf("{%s'%s'}", directionString, t.FileName)
 }
 
 func (t Token) String() string {
@@ -89,8 +104,8 @@ func GetNextStartToken(command []rune) IToken {
 			return Token{Position: i, Type: SingleQuote}
 		case r == '"':
 			return Token{Position: i, Type: DoubleQuote}
-		case (r == '>' && command[i+1] == '>') || (unicode.IsDigit(r) && command[i+1] == '>'):
-			return RedirectToken{Token{i, Redirection}, RedirectOutput}
+		case (r == '>' && command[i+1] == ' ') || (r == '>' && command[i+1] == '>') || (unicode.IsDigit(r) && command[i+1] == '>'):
+			return Token{i, Redirection}
 
 		// TODO: figure out a more generalized way of handling this
 		// (or maybe we can separate path identifiers from words and numbers? so, less general? 🤔)
@@ -180,4 +195,21 @@ func GetNextDoubleQuoteTokenEnd(command []rune) (Token, error) {
 	}
 	// we chouldn't find it
 	return Token{}, errors.New("fell off the edge chasing double quote")
+}
+
+func GetNextRedirectTokenEnd(command []rune) (RedirectToken, error) {
+	DbgSanitisedPrintf("Extracting filename from %s\n", string(command))
+	firstSpace := slices.Index(command, ' ')
+	DbgPrintf("First space @%d\n", firstSpace)
+	if firstSpace == -1 {
+		panic("malformed redirectToken")
+	}
+	token, err := GetNextPlainTokenEnd(command[firstSpace+1:])
+	DbgPrintTokenln("Redirect filename token", token, '!')
+	fileNameBegin := firstSpace + 1
+	fileNameEnd := firstSpace + 1 + token.Position
+	fileName := string(command[fileNameBegin:fileNameEnd])
+	token.Position = fileNameEnd
+	DbgPrintf("Filename should be: %s\n", fileName)
+	return RedirectToken{Token: token, Direction: RedirectOutput, FileName: fileName, ShouldAppend: false}, err
 }

@@ -9,17 +9,21 @@ import (
 	"strings"
 )
 
+// Did not use iota here because I wanted the error codes to be stable
+// and possibly have a hierarcy (e.g.) 4:IOError, 41:FilePermissionError, 42:FileWriteError
+// the jury is still out if it turned out to be useful :)
 const (
 	noError           = 0
 	generalError      = 1
 	commandUsageError = 2
 	invalidArguments  = 3
+	IOError           = 4
 )
 
 type redirections struct {
-	in  os.File
-	out os.File
-	err os.File
+	in  *os.File
+	out *os.File
+	err *os.File
 }
 
 type builtin func([]string)
@@ -47,14 +51,15 @@ func main() {
 			os.Exit(commandUsageError)
 		} else {
 			var outputCommandFields []string
-			// var commandRedirections redirections
 			inputCommandRunes := []rune(inputCommand)
 			outputCommandBeingBuilt := ""
+			commandRedirections := redirections{in: os.Stdin, out: os.Stdout, err: os.Stderr}
 
 			for len(inputCommand) > 0 {
 				startToken := GetNextStartToken(inputCommandRunes)
 				DbgPrintTokenln("our new startToken", startToken, inputCommandRunes[startToken.GetPosition()])
 				var endToken Token
+				var redirectToken RedirectToken
 				processingRedirection := false
 				inputCommandRunes = inputCommandRunes[startToken.GetPosition():]
 				inputCommand = inputCommand[startToken.GetPosition():]
@@ -86,7 +91,42 @@ func main() {
 
 				case Redirection:
 					processingRedirection = true
-					// commandRedirections = redirections{in: *os.Stdin}
+					redirectToken, err = GetNextRedirectTokenEnd(inputCommandRunes)
+					DbgPrintf("Got RedirectEndToken: %v\n", redirectToken)
+					if err != nil {
+						fmt.Printf("Error while getting RedirectToken End Token: %s", err)
+						os.Exit(generalError)
+					}
+					endToken = redirectToken.Token
+					switch redirectToken.Direction {
+					case RedirectOutput:
+						var outputFile *os.File
+						if redirectToken.ShouldAppend {
+							outputFile, err = os.OpenFile(redirectToken.FileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+							if err != nil {
+								fmt.Printf("Output file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
+								os.Exit(IOError)
+							}
+							commandRedirections.out = outputFile
+						} else { // should not append
+							outputFile, err = os.Create(redirectToken.FileName)
+							if err != nil {
+								fmt.Printf("Output file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
+								os.Exit(IOError)
+							}
+							commandRedirections.out = outputFile
+						}
+					case RedirectInput:
+						inputFile, err := os.Open(redirectToken.FileName)
+						if err != nil {
+							fmt.Printf("Input file for command redirect could not be opened: %s\n", err)
+							os.Exit(IOError)
+						}
+						commandRedirections.in = inputFile
+					case RedirectError:
+					default:
+						panic(fmt.Sprintf("unexpected main.RedirectType: %#v", redirectToken.Direction))
+					}
 
 				case Termination:
 					endToken, err = Token{Position: 1, Type: Termination}, nil
@@ -105,7 +145,7 @@ func main() {
 				DbgSanitisedPrintf("new command: %v\n", inputCommand)
 				DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
 
-				if (endToken.Type != Termination) && (inputCommandRunes[0] == ' ' || inputCommandRunes[0] == '\n') {
+				if (!processingRedirection) && (endToken.Type != Termination) && (inputCommandRunes[0] == ' ' || inputCommandRunes[0] == '\n') {
 					outputCommandFields = append(outputCommandFields, outputCommandBeingBuilt)
 					DbgPrintf("new commandFields: %v\n", outputCommandFields)
 					outputCommandBeingBuilt = ""
@@ -125,9 +165,9 @@ func main() {
 			if _, exists := executableExistsInPath(outputCommandName); exists {
 				cmd := exec.Command(outputCommandName, outputCommandFields[1:]...)
 				DbgPrintf("running command %s with args %v\n", outputCommandName, outputCommandFields[1:])
-				cmd.Stdin = os.Stdin
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
+				cmd.Stdin = commandRedirections.in
+				cmd.Stdout = commandRedirections.out
+				cmd.Stderr = commandRedirections.err
 				cmd.Run()
 				continue
 
