@@ -126,6 +126,22 @@ func main() {
 						}
 						commandRedirections.in = inputFile
 					case RedirectError:
+						var errorOutput *os.File
+						if redirectToken.ShouldAppend {
+							errorOutput, err = os.OpenFile(redirectToken.FileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+							if err != nil {
+								fmt.Printf("Error file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
+								os.Exit(IOError)
+							}
+							commandRedirections.out = errorOutput
+						} else { // should not append
+							errorOutput, err = os.Create(redirectToken.FileName)
+							if err != nil {
+								fmt.Printf("Error file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
+								os.Exit(IOError)
+							}
+							commandRedirections.err = errorOutput
+						}
 					default:
 						panic(fmt.Sprintf("unexpected main.RedirectType: %#v", redirectToken.Direction))
 					}
