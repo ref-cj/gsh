@@ -111,6 +111,10 @@ func GetNextStartToken(command []rune) IToken {
 		// (or maybe we can separate path identifiers from words and numbers? so, less general? 🤔)
 		case unicode.IsDigit(r), unicode.IsLetter(r), r == '/', r == '.', r == '~', r == '\\':
 			return Token{Position: i, Type: Plain}
+		// NOTE: We should probably parse these as flags/option of type either "-h" or "--help"
+		// but right now we have no special processing for options and it looks like we can get away with treating them as arguments
+		case r == '-':
+			return Token{Position: i, Type: Plain}
 		case unicode.IsSpace(r):
 			DbgPrintf("skipping something spacey: '%c' (0x%x - %d) @ position: %d\n", r, r, r, i)
 			continue
