@@ -26,7 +26,9 @@ type redirections struct {
 	err *os.File
 }
 
-type builtin func([]string)
+// considered generalizing this into a more general "command context" that includes the redirs
+// deciding against it for now in favour of "doing the simplest thing possible"
+type builtin func([]string, redirections)
 
 var builtins = make(map[string]builtin, 5)
 
@@ -157,7 +159,7 @@ func main() {
 
 			// is this a builtin?
 			if _builtin, ok := builtins[outputCommandName]; ok {
-				_builtin(outputCommandFields[1:])
+				_builtin(outputCommandFields[1:], commandRedirections)
 				continue
 			}
 
@@ -179,11 +181,12 @@ func main() {
 	}
 }
 
-func echo(params []string) {
-	fmt.Println(strings.Join(params, " "))
+func echo(params []string, redirs redirections) {
+	// fmt.Println(strings.Join(params, " "))
+	fmt.Fprintln(redirs.out, strings.Join(params, " "))
 }
 
-func cd(params []string) {
+func cd(params []string, _ redirections) {
 	// not sure about special-casing this..
 	if params[0] == "~" {
 		if homeDir, err := os.UserHomeDir(); err != nil {
@@ -206,16 +209,16 @@ func cd(params []string) {
 	}
 }
 
-func pwd(params []string) {
+func pwd(params []string, redirs redirections) {
 	wd, err := os.Getwd()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(generalError)
 	}
-	fmt.Println(wd)
+	fmt.Fprintln(redirs.out, wd)
 }
 
-func exit(code []string) {
+func exit(code []string, _ redirections) {
 	if len(code) == 0 {
 		os.Exit(noError)
 	}
@@ -228,21 +231,21 @@ func exit(code []string) {
 	}
 }
 
-func toipe(fns []string) {
+func toipe(fns []string, redirs redirections) {
 	for _, t := range fns {
 		isBuiltin, isInPath := false, false
 		if _, ok := builtins[t]; ok {
-			fmt.Printf("%s is a shell builtin\n", t)
+			fmt.Fprintf(redirs.out, "%s is a shell builtin\n", t)
 			isBuiltin = true
 			continue
 		}
 		if fullFilePath, exists := executableExistsInPath(t); exists {
-			fmt.Printf("%s is %s\n", t, fullFilePath)
+			fmt.Fprintf(redirs.out, "%s is %s\n", t, fullFilePath)
 			isInPath = true
 			continue
 		}
 		if !isBuiltin && !isInPath {
-			fmt.Printf("%s: not found\n", t)
+			fmt.Fprintf(redirs.out, "%s: not found\n", t)
 		}
 	}
 }
