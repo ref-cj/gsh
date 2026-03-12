@@ -164,9 +164,6 @@ func GetNextSingleQuoteTokenEnd(command []rune) (Token, error) {
 	return Token{}, errors.New("fell off the edge chasing single quote")
 }
 
-// TODO: we won't handle special escaping cases rn, this will be a simple dupe of GetNextSingleQuoteTokenEnd()
-// (so yeah, it's intentional.. and hopefully short lived)
-
 func GetNextDoubleQuoteTokenEnd(command []rune) (Token, error) {
 	DbgSanitisedPrintf("going to search in %v for DoubleQuote end token\n", string(command))
 	escaping := false
