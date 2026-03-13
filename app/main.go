@@ -133,7 +133,7 @@ func main() {
 								fmt.Printf("Error file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
 								os.Exit(IOError)
 							}
-							commandRedirections.out = errorOutput
+							commandRedirections.err = errorOutput
 						} else { // should not append
 							errorOutput, err = os.Create(redirectToken.FileName)
 							if err != nil {
