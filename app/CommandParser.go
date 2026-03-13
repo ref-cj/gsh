@@ -199,6 +199,7 @@ func GetNextDoubleQuoteTokenEnd(command []rune) (Token, error) {
 }
 
 func GetNextRedirectTokenEnd(command []rune) (RedirectToken, error) {
+	shouldAppend := false
 	direction := RedirectOutput
 	DbgSanitisedPrintf("Extracting filename from %s\n", string(command))
 	firstSpace := slices.Index(command, ' ')
@@ -209,6 +210,9 @@ func GetNextRedirectTokenEnd(command []rune) (RedirectToken, error) {
 	}
 	if firstOutArrow != -1 {
 		DbgPrintln("has output")
+		if command[firstOutArrow+1] == '>' {
+			shouldAppend = true
+		}
 		if firstOutArrow-1 >= 0 && command[firstOutArrow-1] == '2' {
 			DbgPrintln("is error")
 			direction = RedirectError
@@ -221,5 +225,5 @@ func GetNextRedirectTokenEnd(command []rune) (RedirectToken, error) {
 	fileName := string(command[fileNameBegin:fileNameEnd])
 	token.Position = fileNameEnd
 	DbgPrintf("Filename should be: %s\n", fileName)
-	return RedirectToken{Token: token, Direction: direction, FileName: fileName, ShouldAppend: false}, err
+	return RedirectToken{Token: token, Direction: direction, FileName: fileName, ShouldAppend: shouldAppend}, err
 }
