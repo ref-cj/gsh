@@ -1,12 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
+
+	"github.com/chzyer/readline"
 )
 
 // Did not use iota here because I wanted the error codes to be stable
@@ -39,15 +40,36 @@ func main() {
 	builtins["pwd"] = pwd
 	builtins["cd"] = cd
 
+	builtinCompleter := readline.NewPrefixCompleter(
+		readline.PcItem("echo"),
+		readline.PcItem("exit"),
+	)
+
 	wd, _ := os.Getwd()
 	DbgPrintf("Current working directory: %s\n", wd)
 
 	for {
 		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
 		// And maybe show it in debug mode by default?
-		fmt.Print(GetPS1())
-		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new inputCommand?
-		inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
+
+		//fmt.Print(GetPS1())
+		//// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new inputCommand?
+		//inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
+
+		rl, err := readline.NewEx(&readline.Config{
+			Prompt:       GetPS1(),
+			AutoComplete: builtinCompleter,
+		})
+
+		// defer rl.Close()
+
+		inputCommand, err := rl.Readline()
+		// FIXME: the library seems to eat the \n at the end.
+		// will append it for now.
+		// remove this when removing the lib
+
+		inputCommand += "\n"
+
 		if err != nil {
 			fmt.Println("Could not read input from stdin")
 			os.Exit(commandUsageError)
