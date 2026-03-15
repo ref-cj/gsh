@@ -56,7 +56,7 @@ func main() {
 		//// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new inputCommand?
 		//inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
 
-		rl, err := readline.NewEx(&readline.Config{
+		rl, _ := readline.NewEx(&readline.Config{
 			Prompt:       GetPS1(),
 			AutoComplete: builtinCompleter,
 		})
@@ -67,7 +67,6 @@ func main() {
 		// FIXME: the library seems to eat the \n at the end.
 		// will append it for now.
 		// remove this when removing the lib
-
 		inputCommand += "\n"
 
 		if err != nil {
