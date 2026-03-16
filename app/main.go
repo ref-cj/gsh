@@ -39,10 +39,6 @@ func main() {
 	builtins["pwd"] = pwd
 	builtins["cd"] = cd
 
-	cmd := exec.Command("tty")
-	tty, _ := cmd.Output()
-	ttystr := string(tty)
-	fmt.Printf("\n\n\n This just in: %s \n \n \n", ttystr)
 	wd, _ := os.Getwd()
 	DbgPrintf("Current working directory: %s\n", wd)
 
@@ -52,17 +48,6 @@ func main() {
 
 		fmt.Print(GetPS1())
 		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new inputCommand?
-		stdinReader := bufio.NewReader(os.Stdin)
-		var line string
-		for {
-			rune, _, _ := stdinReader.ReadRune()
-			line += string(rune)
-			fmt.Println(rune)
-			if rune == '\n' {
-				fmt.Printf("en son: %s \n", line)
-				break
-			}
-		}
 		inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
 
 		if err != nil {
