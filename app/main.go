@@ -45,13 +45,12 @@ func main() {
 		Terminal.RawVegan() // put term into raw mode
 
 		fmt.Print(GetPS1())
-		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new inputCommand?
-		// inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
+
 		inputCommand, err := Readline.GetLine()
 
 		Terminal.Cookify() // revert changes we did for raw mode
 		if err != nil {
-			fmt.Println("Could not read input from stdin")
+			fmt.Fprintf(os.Stderr, "Could not read input from stdin %s \n", err)
 			os.Exit(commandUsageError)
 		} else {
 			var outputCommandFields []string
@@ -194,7 +193,8 @@ func main() {
 			}
 
 			// looks like we don't know what this is
-			fmt.Printf("%v: command not found\n", strings.Join(outputCommandFields, ""))
+			// fmt.Fprintf(commandRedirections.out, "%s: command not found\n", strings.Join(outputCommandFields, ""))
+			fmt.Fprintf(commandRedirections.out, "%s: command not found\n", outputCommandName)
 		}
 	}
 }
