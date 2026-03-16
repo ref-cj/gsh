@@ -42,13 +42,14 @@ func main() {
 		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
 		// And maybe show it in debug mode by default?
 
-		Terminal.RawVegan()
+		Terminal.RawVegan() // put term into raw mode
 
 		fmt.Print(GetPS1())
 		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new inputCommand?
 		// inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		inputCommand, err := Readline.GetLine()
 
+		Terminal.Cookify() // revert changes we did for raw mode
 		if err != nil {
 			fmt.Println("Could not read input from stdin")
 			os.Exit(commandUsageError)
