@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -47,7 +46,8 @@ func main() {
 
 		fmt.Print(GetPS1())
 		// maybe we don't delimit by \n here? Is this baking in the assumption that every line is a new inputCommand?
-		inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		// inputCommand, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		inputCommand, err := Readline.GetLine()
 
 		if err != nil {
 			fmt.Println("Could not read input from stdin")

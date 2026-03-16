@@ -16,6 +16,8 @@ import (
 // I was dumb when looking for that, and it took me ages to figure out that I couldn't get the to the docs with "man 2 TCGETS" so I'll leave this here as well
 // If mood strikes to click on hyperlinks, this also works: https://man7.org/linux/man-pages/man2/TCGETS2.2const.html
 
+// I don't know how I feel about this namespacing trick I invented...
+// I should look into this and confirm that this with the function receiver syntax sugar does not generate dumb code.
 type terminal struct{}
 
 var Terminal terminal
