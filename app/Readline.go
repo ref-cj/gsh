@@ -12,7 +12,6 @@ type readline struct{}
 var Readline readline
 
 func (r readline) GetLine() (string, error) {
-	// var buf [4]byte // UTF8 can be 4 bytes long right!?
 	var line string
 	input := bufio.NewReader(os.Stdin)
 parseloop:
@@ -20,7 +19,6 @@ parseloop:
 		readedRune, _, err := input.ReadRune()
 		if err != nil {
 			return "", err
-			// panic("could not read input from stdin")
 		}
 		switch readedRune {
 		case '\n':
@@ -29,6 +27,10 @@ parseloop:
 			break parseloop
 		case '\t':
 			DbgPrintln("completion will go here")
+		case '\b', 127: // \b is 0x8 which is backspace. But both konsole and ghostty send 127 (DEL) for backspace. This case condition covers both
+			if len(line) > 0 {
+				line = line[:len(line)-1]
+			}
 		default:
 			line += string(readedRune)
 		}
