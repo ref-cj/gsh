@@ -39,9 +39,6 @@ func main() {
 	builtins["pwd"] = pwd
 	builtins["cd"] = cd
 
-	wd, _ := os.Getwd()
-	DbgPrintf("Current working directory: %s\n", wd)
-
 	for {
 		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
 		// And maybe show it in debug mode by default?
