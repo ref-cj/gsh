@@ -37,13 +37,13 @@ func (term terminal) RawVegan() {
 	// ECHO for echoing the characters written back to the term
 	// rn, we won't be able to process controll characters like ^C
 	// becaues we are not including unix.ISIG (signals) or unix.IEXTEN (^V:paste)
-	term_.Lflag &^= unix.ICANON //| unix.ECHO
+	term_.Lflag &^= unix.ICANON | unix.ECHO // | unix.ECHONL
 	unix.IoctlSetTermios(stdinFD, unix.TCSETS, term_)
 }
 
 func (term terminal) Cookify() {
 	stdinFd := int(os.Stdin.Fd())
 	term_, _ := unix.IoctlGetTermios(stdinFd, unix.TCGETS)
-	term_.Lflag |= unix.ICANON //| unix.ECHO
+	term_.Lflag |= unix.ICANON | unix.ECHO // | unix.ECHONL
 	unix.IoctlSetTermios(stdinFd, unix.TCSETS, term_)
 }
