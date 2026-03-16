@@ -39,6 +39,10 @@ func main() {
 	builtins["pwd"] = pwd
 	builtins["cd"] = cd
 
+	cmd := exec.Command("tty")
+	tty, _ := cmd.Output()
+	ttystr := string(tty)
+	fmt.Printf("\n\n\n This just in: %s \n \n \n", ttystr)
 	wd, _ := os.Getwd()
 	DbgPrintf("Current working directory: %s\n", wd)
 
