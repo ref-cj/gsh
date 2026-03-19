@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 type readline struct {
@@ -32,20 +33,37 @@ func (r readline) GetLine() (string, error) {
 			line += "\n"
 			done = true
 		case '\t':
+			// TODO: currently both getFirstMatchingBinaryInPath and getStringsWithSubstring do a Cointains() check
+			// which works a bit like a fuzzy find (but not really)
+			// we would ideally move on to a "BeginsWith" kind of search
 			lastSpaceInLine := strings.LastIndex(line, " ")
 			var lastWord string
 			if lastSpaceInLine == -1 { // either this is the first word (or just tab on an empty line)
 				lastSpaceInLine = 0
-				lastWord = ""
+				lastWord = line
 			} else {
 				lastWord = line[lastSpaceInLine+1:] //+1 to drop space
 			}
-			completionCandidates := getStringsWithSubstring(Readline.Completions, lastWord)
-			if len(completionCandidates) > 0 {
-				line = line[:lastSpaceInLine] + Readline.Completions[completionCandidates[0]] + " " // replace the last word with the first completion
-			} else {
-				fmt.Printf("%c", '\a') // ding
+			builtinCompletionCandidates := getStringsWithSubstring(Readline.Completions, lastWord)
+			if len(builtinCompletionCandidates) > 0 {
+				line = line[:lastSpaceInLine] + Readline.Completions[builtinCompletionCandidates[0]] + " " // replace the last word with the first completion
+				break
 			}
+
+			begin := time.Now()
+			firstMatchingBinaryInPath := getFirstMatchingBinaryInPath(lastWord)
+
+			end := time.Since(begin)
+			DbgPrintf("\n\nsearch took: %v\n\n", end)
+
+			if firstMatchingBinaryInPath != "" {
+				line = line[:lastSpaceInLine] + firstMatchingBinaryInPath + " " // replace the last word with the first completion
+				break
+			}
+
+			// This is only happens if no completion candidates are in builtins or in path
+			fmt.Printf("%c", '\a') // ding
+
 		case '\b', 127: // \b is 0x8 which is backspace. But both konsole and ghostty send 127 (DEL) for backspace. This case condition covers both
 			if len(line) > 0 {
 				line = line[:len(line)-1]
@@ -59,6 +77,28 @@ func (r readline) GetLine() (string, error) {
 		}
 	}
 	return line, nil
+}
+
+func getFirstMatchingBinaryInPath(wordPart string) string {
+	// DbgPrintf("\nsearcing for %s\n", wordPart)
+	if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
+		for path := range strings.SplitSeq(pathValue, string(os.PathListSeparator)) {
+			// DbgPrintf("  Currently looking in %s\n", path)
+			dirEntries, err := os.ReadDir(path)
+			if err == nil {
+				for _, dirEntry := range dirEntries {
+					// DbgPrintf("    investitagating %s\n", dirEntry.Name())
+					fileInfo, err := os.Stat(path + string(os.PathSeparator) + dirEntry.Name())
+					if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.Contains(fileInfo.Name(), wordPart) {
+						// DbgPrintln("      should work!")
+						return fileInfo.Name()
+					}
+				}
+			}
+		}
+	}
+	DbgPrintf("No completion found anywhere in path for %s\n", wordPart)
+	return ""
 }
 
 func getStringsWithSubstring(Strings []string, Substring string) []int {
