@@ -30,6 +30,7 @@ func (r readline) GetLine() (string, error) {
 		}
 		switch readedRune {
 		case '\r', '\n':
+			line = strings.TrimRight(line, " ")
 			line += "\n"
 			done = true
 		case '\t':
