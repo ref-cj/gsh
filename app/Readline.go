@@ -39,15 +39,21 @@ func (r readline) GetLine() (string, error) {
 			// we would ideally move on to a "BeginsWith" kind of search
 			lastSpaceInLine := strings.LastIndex(line, " ")
 			var lastWord string
+			isFirstWord := false
 			if lastSpaceInLine == -1 { // either this is the first word (or just tab on an empty line)
 				lastSpaceInLine = 0
-				lastWord = line
+				isFirstWord = true
+				lastWord = line // first and last word..
 			} else {
 				lastWord = line[lastSpaceInLine+1:] //+1 to drop space
 			}
 			builtinCompletionCandidates := getStringsWithSubstring(Readline.Completions, lastWord)
 			if len(builtinCompletionCandidates) > 0 {
-				line = line[:lastSpaceInLine] + Readline.Completions[builtinCompletionCandidates[0]] + " " // replace the last word with the first completion
+				restoredSpace := ""
+				if !isFirstWord { // if there were words before this, restore the space we cut off
+					restoredSpace = " "
+				}
+				line = line[:lastSpaceInLine] + restoredSpace + Readline.Completions[builtinCompletionCandidates[0]] + " " // replace the last word with the first completion
 				break
 			}
 
@@ -58,7 +64,11 @@ func (r readline) GetLine() (string, error) {
 			DbgPrintf("\n\nsearch took: %v\n\n", end)
 
 			if firstMatchingBinaryInPath != "" {
-				line = line[:lastSpaceInLine] + firstMatchingBinaryInPath + " " // replace the last word with the first completion
+				restoredSpace := ""
+				if !isFirstWord { // if there were words before this, restore the space we cut off
+					restoredSpace = " "
+				}
+				line = line[:lastSpaceInLine] + restoredSpace + firstMatchingBinaryInPath + " " // replace the last word with the first completion
 				break
 			}
 
