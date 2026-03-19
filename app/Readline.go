@@ -33,10 +33,13 @@ func (r readline) GetLine() (string, error) {
 			done = true
 		case '\t':
 			lastSpaceInLine := strings.LastIndex(line, " ")
+			var lastWord string
 			if lastSpaceInLine == -1 { // either this is the first word (or just tab on an empty line)
 				lastSpaceInLine = 0
+				lastWord = ""
+			} else {
+				lastWord = line[lastSpaceInLine+1:] //+1 to drop space
 			}
-			lastWord := line[lastSpaceInLine+1:] //+1 to drop space
 			completionCandidates := getStringsWithSubstring(Readline.Completions, lastWord)
 			if len(completionCandidates) > 0 {
 				line = line[:lastSpaceInLine] + Readline.Completions[completionCandidates[0]] + " " // replace the last word with the first completion
