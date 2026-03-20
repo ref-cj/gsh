@@ -34,9 +34,6 @@ func (r readline) GetLine() (string, error) {
 			line += "\n"
 			done = true
 		case '\t':
-			// TODO: currently both getFirstMatchingBinaryInPath and getStringsWithSubstring do a Cointains() check
-			// which works a bit like a fuzzy find (but not really)
-			// we would ideally move on to a "BeginsWith" kind of search
 			lastSpaceInLine := strings.LastIndex(line, " ")
 			var lastWord string
 			isFirstWord := false
@@ -100,7 +97,7 @@ func getFirstMatchingBinaryInPath(wordPart string) string {
 				for _, dirEntry := range dirEntries {
 					// DbgPrintf("    investitagating %s\n", dirEntry.Name())
 					fileInfo, err := os.Stat(path + string(os.PathSeparator) + dirEntry.Name())
-					if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.Contains(fileInfo.Name(), wordPart) {
+					if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.HasPrefix(fileInfo.Name(), wordPart) {
 						// DbgPrintln("      should work!")
 						return fileInfo.Name()
 					}
@@ -115,7 +112,7 @@ func getFirstMatchingBinaryInPath(wordPart string) string {
 func getStringsWithSubstring(Strings []string, Substring string) []int {
 	var indexes []int
 	for i, str := range Strings {
-		if strings.Contains(str, Substring) {
+		if strings.HasPrefix(str, Substring) {
 			indexes = append(indexes, i)
 		}
 	}
