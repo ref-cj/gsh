@@ -1,4 +1,3 @@
 startup "bench"
 time each command
 notes todos fixmes
-commandparser warns -- valid?
