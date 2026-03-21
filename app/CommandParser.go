@@ -28,22 +28,6 @@ type Token struct {
 	Type     TokenType
 }
 
-func (token Token) GetPosition() int {
-	return token.Position
-}
-
-func (token Token) GetType() TokenType {
-	return token.Type
-}
-
-func (redirectToken RedirectToken) GetPosition() int {
-	return redirectToken.Token.Position
-}
-
-func (redirectToken RedirectToken) GetType() TokenType {
-	return redirectToken.Token.Type
-}
-
 type RedirectType int
 
 const (
@@ -59,21 +43,12 @@ type RedirectToken struct {
 	FileName     string
 }
 
-func (redirectToken RedirectToken) String() string {
-	var directionString string
-	if redirectToken.Direction == RedirectInput {
-		directionString = "<--"
-	}
-	if redirectToken.Direction == RedirectOutput {
-		directionString = "-->"
-	}
-	if redirectToken.Direction == RedirectError {
-		directionString = "E->"
-	}
-	if redirectToken.ShouldAppend {
-		directionString += "+"
-	}
-	return fmt.Sprintf("{%s'%s'}", directionString, redirectToken.FileName)
+func (token Token) GetPosition() int {
+	return token.Position
+}
+
+func (token Token) GetType() TokenType {
+	return token.Type
 }
 
 func (token Token) String() string {
@@ -93,6 +68,31 @@ func (token Token) String() string {
 		TokenShortName = fmt.Sprintf("?%d?", token.Type)
 	}
 	return fmt.Sprintf("{Pos: %d - Type: %s}", token.Position, TokenShortName)
+}
+
+func (redirectToken RedirectToken) GetPosition() int {
+	return redirectToken.Token.Position
+}
+
+func (redirectToken RedirectToken) GetType() TokenType {
+	return redirectToken.Token.Type
+}
+
+func (redirectToken RedirectToken) String() string {
+	var directionString string
+	if redirectToken.Direction == RedirectInput {
+		directionString = "<--"
+	}
+	if redirectToken.Direction == RedirectOutput {
+		directionString = "-->"
+	}
+	if redirectToken.Direction == RedirectError {
+		directionString = "E->"
+	}
+	if redirectToken.ShouldAppend {
+		directionString += "+"
+	}
+	return fmt.Sprintf("{%s'%s'}", directionString, redirectToken.FileName)
 }
 
 func GetNextStartToken(command []rune) IToken {
