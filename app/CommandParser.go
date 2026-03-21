@@ -59,26 +59,26 @@ type RedirectToken struct {
 	FileName     string
 }
 
-func (t RedirectToken) String() string {
+func (redirectToken RedirectToken) String() string {
 	var directionString string
-	if t.Direction == RedirectInput {
+	if redirectToken.Direction == RedirectInput {
 		directionString = "<--"
 	}
-	if t.Direction == RedirectOutput {
+	if redirectToken.Direction == RedirectOutput {
 		directionString = "-->"
 	}
-	if t.Direction == RedirectError {
+	if redirectToken.Direction == RedirectError {
 		directionString = "E->"
 	}
-	if t.ShouldAppend {
+	if redirectToken.ShouldAppend {
 		directionString += "+"
 	}
-	return fmt.Sprintf("{%s'%s'}", directionString, t.FileName)
+	return fmt.Sprintf("{%s'%s'}", directionString, redirectToken.FileName)
 }
 
-func (t Token) String() string {
+func (token Token) String() string {
 	var TokenShortName string
-	switch t.Type {
+	switch token.Type {
 	case Plain:
 		TokenShortName = "Pl"
 	case SingleQuote:
@@ -90,9 +90,9 @@ func (t Token) String() string {
 	case Termination:
 		TokenShortName = "Tx"
 	default:
-		TokenShortName = fmt.Sprintf("?%d?", t.Type)
+		TokenShortName = fmt.Sprintf("?%d?", token.Type)
 	}
-	return fmt.Sprintf("{Pos: %d - Type: %s}", t.Position, TokenShortName)
+	return fmt.Sprintf("{Pos: %d - Type: %s}", token.Position, TokenShortName)
 }
 
 func GetNextStartToken(command []rune) IToken {
