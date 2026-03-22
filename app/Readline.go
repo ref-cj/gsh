@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 	"time"
 )
@@ -65,8 +66,12 @@ func (r readline) GetLine() (string, error) {
 			if len(matchingBinariesCache) == 0 {
 				begin := time.Now()
 				matchingBinariesCache = getMatchingBinariesInPath(lastWord)
+				// this is required by codecrafters tests
+				// neither zsh nor bash does this without additional configuration
+				// and I kind of don't like it. Tie not doing this to a flag maybe? we can set in our env and codecrafters can ignore on theirs
+				slices.Sort(matchingBinariesCache)
 				end := time.Since(begin)
-				DbgPrintf("\nsearch took: %v\n", end)
+				DbgPrintf("\nsearch (and sort) took: %v\n", end)
 			} else {
 				DbgPrintf("\nusing completion cache for results in path\n")
 			}
