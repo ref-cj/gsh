@@ -20,6 +20,9 @@ func (r readline) GetLine() (string, error) {
 	var line string
 	input := bufio.NewReader(os.Stdin)
 	done := false
+	// tabCount :=0
+	// var matchingBinariesCache []string
+
 	for {
 		readedRune, size, err := input.ReadRune()
 		if size == 0 && err == io.EOF {
@@ -54,18 +57,32 @@ func (r readline) GetLine() (string, error) {
 				break
 			}
 
+			// Single match implementation, keep for reference for a couple of iterations
+			//
+			// begin := time.Now()
+			// firstMatchingBinaryInPath := getFirstMatchingBinaryInPath(lastWord)
+			//
+			// end := time.Since(begin)
+			// DbgPrintf("\n\nsearch took: %v\n\n", end)
+			//
+			// if firstMatchingBinaryInPath != "" {
+			// 	restoredSpace := ""
+			// 	if !isFirstWord { // if there were words before this, restore the space we cut off
+			// 		restoredSpace = " "
+			// 	}
+			// 	line = line[:lastSpaceInLine] + restoredSpace + firstMatchingBinaryInPath + " " // replace the last word with the first completion
+			// 	break
+			// }
+
 			begin := time.Now()
-			firstMatchingBinaryInPath := getFirstMatchingBinaryInPath(lastWord)
-
+			// do this on first tab (as per spec) and cache it. check cache the second time
+			matchingBinariesInPath := getMatchingBinariesInPath(lastWord)
 			end := time.Since(begin)
-			DbgPrintf("\n\nsearch took: %v\n\n", end)
+			DbgPrintf("\nsearch took: %v\n", end)
 
-			if firstMatchingBinaryInPath != "" {
-				restoredSpace := ""
-				if !isFirstWord { // if there were words before this, restore the space we cut off
-					restoredSpace = " "
-				}
-				line = line[:lastSpaceInLine] + restoredSpace + firstMatchingBinaryInPath + " " // replace the last word with the first completion
+			if len(matchingBinariesInPath) > 0 {
+				fmt.Fprintf(os.Stdout, "\n%s\n", strings.Join(matchingBinariesInPath, " "))
+				// fmt.Fprintln(os.Stdout, line)
 				break
 			}
 
@@ -105,8 +122,35 @@ func getFirstMatchingBinaryInPath(wordPart string) string {
 			}
 		}
 	}
-	DbgPrintf("No completion found anywhere in path for %s\n", wordPart)
+	DbgPrintf("\nNo completion found anywhere in path for %s\n", wordPart)
 	return ""
+}
+
+func getMatchingBinariesInPath(wordPart string) []string {
+	var result []string
+	// DbgPrintf("\nsearcing for %s\n", wordPart)
+	if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
+		for path := range strings.SplitSeq(pathValue, string(os.PathListSeparator)) {
+			// DbgPrintf("  Currently looking in %s\n", path)
+			dirEntries, err := os.ReadDir(path)
+			if err == nil {
+				for _, dirEntry := range dirEntries {
+					// DbgPrintf("    investitagating %s\n", dirEntry.Name())
+					fileInfo, err := os.Stat(path + string(os.PathSeparator) + dirEntry.Name())
+					if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.HasPrefix(fileInfo.Name(), wordPart) {
+						// DbgPrintln("      should work!")
+						result = append(result, fileInfo.Name())
+					}
+				}
+			}
+		}
+	}
+	if len(result) > 0 {
+		DbgPrintf("Found %d commands in total", len(result))
+	} else {
+		DbgPrintf("No completion found anywhere in path for %s\n", wordPart)
+	}
+	return result
 }
 
 func getStringsWithSubstring(Strings []string, Substring string) []int {
