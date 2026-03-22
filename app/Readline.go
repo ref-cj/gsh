@@ -57,23 +57,6 @@ func (r readline) GetLine() (string, error) {
 				break
 			}
 
-			// Single match implementation, keep for reference for a couple of iterations
-			//
-			// begin := time.Now()
-			// firstMatchingBinaryInPath := getFirstMatchingBinaryInPath(lastWord)
-			//
-			// end := time.Since(begin)
-			// DbgPrintf("\n\nsearch took: %v\n\n", end)
-			//
-			// if firstMatchingBinaryInPath != "" {
-			// 	restoredSpace := ""
-			// 	if !isFirstWord { // if there were words before this, restore the space we cut off
-			// 		restoredSpace = " "
-			// 	}
-			// 	line = line[:lastSpaceInLine] + restoredSpace + firstMatchingBinaryInPath + " " // replace the last word with the first completion
-			// 	break
-			// }
-
 			begin := time.Now()
 			// do this on first tab (as per spec) and cache it. check cache the second time
 			matchingBinariesInPath := getMatchingBinariesInPath(lastWord)
@@ -108,28 +91,6 @@ func (r readline) GetLine() (string, error) {
 		}
 	}
 	return line, nil
-}
-
-func getFirstMatchingBinaryInPath(wordPart string) string {
-	// DbgPrintf("\nsearcing for %s\n", wordPart)
-	if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
-		for path := range strings.SplitSeq(pathValue, string(os.PathListSeparator)) {
-			// DbgPrintf("  Currently looking in %s\n", path)
-			dirEntries, err := os.ReadDir(path)
-			if err == nil {
-				for _, dirEntry := range dirEntries {
-					// DbgPrintf("    investitagating %s\n", dirEntry.Name())
-					fileInfo, err := os.Stat(path + string(os.PathSeparator) + dirEntry.Name())
-					if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.HasPrefix(fileInfo.Name(), wordPart) {
-						// DbgPrintln("      should work!")
-						return fileInfo.Name()
-					}
-				}
-			}
-		}
-	}
-	DbgPrintf("\nNo completion found anywhere in path for %s\n", wordPart)
-	return ""
 }
 
 func getMatchingBinariesInPath(wordPart string) []string {
