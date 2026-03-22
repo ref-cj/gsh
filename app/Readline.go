@@ -20,8 +20,8 @@ func (r readline) GetLine() (string, error) {
 	var line string
 	input := bufio.NewReader(os.Stdin)
 	done := false
-	// tabCount :=0
-	// var matchingBinariesCache []string
+	tabCount := 0
+	var matchingBinariesCache []string
 
 	for {
 		readedRune, size, err := input.ReadRune()
@@ -37,6 +37,7 @@ func (r readline) GetLine() (string, error) {
 			line += "\n"
 			done = true
 		case '\t':
+			tabCount++
 			lastSpaceInLine := strings.LastIndex(line, " ")
 			var lastWord string
 			isFirstWord := false
@@ -57,13 +58,16 @@ func (r readline) GetLine() (string, error) {
 				break
 			}
 
-			begin := time.Now()
-			// do this on first tab (as per spec) and cache it. check cache the second time
-			matchingBinariesInPath := getMatchingBinariesInPath(lastWord)
-			end := time.Since(begin)
-			DbgPrintf("\nsearch took: %v\n", end)
+			if len(matchingBinariesCache) == 0 {
+				begin := time.Now()
+				matchingBinariesCache = getMatchingBinariesInPath(lastWord)
+				end := time.Since(begin)
+				DbgPrintf("\nsearch took: %v\n", end)
+			} else {
+				DbgPrintf("\nusing completion cache for results in path\n")
+			}
 
-			switch len(matchingBinariesInPath) {
+			switch len(matchingBinariesCache) {
 			case 0:
 				// This is only happens if no completion candidates are in builtins or in path
 				fmt.Printf("%c", '\a') // ding
@@ -72,10 +76,17 @@ func (r readline) GetLine() (string, error) {
 				if !isFirstWord { // if there were words before this, restore the space we cut off
 					restoredSpace = " "
 				}
-				line = line[:lastSpaceInLine] + restoredSpace + matchingBinariesInPath[0] + " " // replace the last word with the first completion
+				line = line[:lastSpaceInLine] + restoredSpace + matchingBinariesCache[0] + " " // replace the last word with the first completion
+				matchingBinariesCache = nil
+				tabCount = 0
 			default:
-				fmt.Fprintf(os.Stdout, "\n%s\n", strings.Join(matchingBinariesInPath, " "))
-				//	break
+				if tabCount == 2 {
+					fmt.Fprintf(os.Stdout, "\n%s\n", strings.Join(matchingBinariesCache, " "))
+					matchingBinariesCache = nil
+					tabCount = 0
+				} else {
+					fmt.Fprintf(os.Stdout, "%c", '\a')
+				}
 			}
 
 		case '\b', 127: // \b is 0x8 which is backspace. But both konsole and ghostty send 127 (DEL) for backspace. This case condition covers both
@@ -95,17 +106,17 @@ func (r readline) GetLine() (string, error) {
 
 func getMatchingBinariesInPath(wordPart string) []string {
 	var result []string
-	DbgPrintf("\nsearcing for %s\n", wordPart)
+	// DbgPrintf("\nsearcing for %s\n", wordPart)
 	if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
 		for path := range strings.SplitSeq(pathValue, string(os.PathListSeparator)) {
-			DbgPrintf("  Currently looking in %s\n", path)
+			// DbgPrintf("  Currently looking in %s\n", path)
 			dirEntries, err := os.ReadDir(path)
 			if err == nil {
 				for _, dirEntry := range dirEntries {
-					DbgPrintf("    investitagating %s\n", dirEntry.Name())
+					// DbgPrintf("    investitagating %s\n", dirEntry.Name())
 					fileInfo, err := os.Stat(path + string(os.PathSeparator) + dirEntry.Name())
 					if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.HasPrefix(fileInfo.Name(), wordPart) {
-						DbgPrintf("      \033[32mshould work! (%s->%s)\n\033[0m", path, fileInfo.Name())
+						// DbgPrintf("      \033[32mshould work! (%s->%s)\n\033[0m", path, fileInfo.Name())
 						result = append(result, fileInfo.Name())
 					}
 				}
