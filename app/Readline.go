@@ -80,14 +80,20 @@ func (r readline) GetLine() (string, error) {
 			end := time.Since(begin)
 			DbgPrintf("\nsearch took: %v\n", end)
 
-			if len(matchingBinariesInPath) > 0 {
+			switch len(matchingBinariesInPath) {
+			case 0:
+				// This is only happens if no completion candidates are in builtins or in path
+				fmt.Printf("%c", '\a') // ding
+			case 1:
+				restoredSpace := ""
+				if !isFirstWord { // if there were words before this, restore the space we cut off
+					restoredSpace = " "
+				}
+				line = line[:lastSpaceInLine] + restoredSpace + matchingBinariesInPath[0] + " " // replace the last word with the first completion
+			default:
 				fmt.Fprintf(os.Stdout, "\n%s\n", strings.Join(matchingBinariesInPath, " "))
-				// fmt.Fprintln(os.Stdout, line)
-				break
+				//	break
 			}
-
-			// This is only happens if no completion candidates are in builtins or in path
-			fmt.Printf("%c", '\a') // ding
 
 		case '\b', 127: // \b is 0x8 which is backspace. But both konsole and ghostty send 127 (DEL) for backspace. This case condition covers both
 			if len(line) > 0 {
