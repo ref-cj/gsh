@@ -21,6 +21,10 @@ func (r readline) GetLine() (string, error) {
 	input := bufio.NewReader(os.Stdin)
 	done := false
 	tabCount := 0
+	// NOTE: this cache *can* be built in init and stored but this make the list of binaries in PATH static.
+	//  As opposed to now, where we generate it on request.
+	//  This means if a binary is added to a location in path (or if the value of PATH changes) we wont be able to use it in a completion until the shell is restarted.
+	//  This scenario is obviously very rare and neither bash, nor zsh support this either. But something to keep in mind
 	var matchingBinariesCache []string
 
 	for {
