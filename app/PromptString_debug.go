@@ -41,6 +41,20 @@ func init() {
 	}
 }
 
+//TODO: This is the draft of a draft of a plan for implementation. Recording it here mostly so I don't have to start thinking about it from 0 the next time
+// I want to add a "last command took: XXms" part to this. But this PS is getting a bit crowded.
+// We can split this into two parts and put some of the info to the right.
+// The timing info we can take in as a parameter or like a context containing timing info and other relevant context.
+// This might include the username and such. Arguably it should be someonelse's responsibility to get, cache and invalidate it.
+// After we have the context, we can do what go/x/term does (https://cs.opensource.google/go/x/term/+/master:term_unix.go)
+// and get the width with unix.IoctlGetWinsize(fd, unix.TIOCGWINSZ).Column.
+// then measure the left frompt string, and right-prompt-string; figure out if there is enough space
+// if there is, render right-prompt, if not, either frop it like zsh, or maybe put it on the next line?
+//
+// More TODO: if every new comman has a timing associated with it, we should probably also keep a history to go back and check
+// maybe wait for the actual history implementation for this?
+//
+
 func GetPS1() string {
 	// NOTE: caching this and invalidating it in the `cd` builtin is attractive
 	// but when measured, this added 10µs. Maybe not worth the complexity and potential bugs?

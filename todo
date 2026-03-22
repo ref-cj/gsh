@@ -1,3 +1,4 @@
 startup "bench"
 time each command
 notes todos fixmes
+PS1() replace ghs with timing to see how it looks
