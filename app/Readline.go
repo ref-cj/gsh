@@ -128,17 +128,17 @@ func getFirstMatchingBinaryInPath(wordPart string) string {
 
 func getMatchingBinariesInPath(wordPart string) []string {
 	var result []string
-	// DbgPrintf("\nsearcing for %s\n", wordPart)
+	DbgPrintf("\nsearcing for %s\n", wordPart)
 	if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
 		for path := range strings.SplitSeq(pathValue, string(os.PathListSeparator)) {
-			// DbgPrintf("  Currently looking in %s\n", path)
+			DbgPrintf("  Currently looking in %s\n", path)
 			dirEntries, err := os.ReadDir(path)
 			if err == nil {
 				for _, dirEntry := range dirEntries {
-					// DbgPrintf("    investitagating %s\n", dirEntry.Name())
+					DbgPrintf("    investitagating %s\n", dirEntry.Name())
 					fileInfo, err := os.Stat(path + string(os.PathSeparator) + dirEntry.Name())
 					if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.HasPrefix(fileInfo.Name(), wordPart) {
-						// DbgPrintln("      should work!")
+						DbgPrintf("      \033[32mshould work! (%s->%s)\n\033[0m", path, fileInfo.Name())
 						result = append(result, fileInfo.Name())
 					}
 				}
@@ -146,9 +146,9 @@ func getMatchingBinariesInPath(wordPart string) []string {
 		}
 	}
 	if len(result) > 0 {
-		DbgPrintf("Found %d commands in total", len(result))
+		DbgPrintf("\nFound %d commands in total", len(result))
 	} else {
-		DbgPrintf("No completion found anywhere in path for %s\n", wordPart)
+		DbgPrintf("\nNo completion found anywhere in path for %s\n", wordPart)
 	}
 	return result
 }
