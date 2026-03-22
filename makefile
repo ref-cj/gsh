@@ -9,3 +9,5 @@ build:
 
 run:
 	@bin/debug/app
+runrel:
+	@bin/release/app
