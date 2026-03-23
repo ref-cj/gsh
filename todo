@@ -2,3 +2,5 @@ startup "bench"
 time each command
 notes todos fixmes
 PS1() replace ghs with timing to see how it looks
+move "binaries in cache" to init() in readline
+context and cancellation in the goroutines in readline
