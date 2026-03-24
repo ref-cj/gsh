@@ -1,3 +1,4 @@
+.PHONY: gogogo clean build run runrel
 gogogo: build run
 
 clean: 
