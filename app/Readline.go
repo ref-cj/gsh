@@ -20,6 +20,39 @@ var Readline = readline{Completions: []string{"echo", "exit"}} // FIXME: this is
 var binariesInPath []string
 
 func init() {
+	timeStart := time.Now()
+	if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
+		var wgPaths sync.WaitGroup
+		binaryChan := make(chan string, 10)
+
+		for path := range strings.SplitSeq(pathValue, string(os.PathListSeparator)) {
+			wgPaths.Add(1)
+			go func(path string) { // launch a goroutine for every directory. Capture path to avoid referencing the "referenced loop var in a goroutine" gotcha (https://go.dev/wiki/CommonMistakes)
+				defer wgPaths.Done()
+				dirEntries, err := os.ReadDir(path)
+				if err == nil {
+					for _, dirEntry := range dirEntries {
+						fileInfo, err := os.Stat(path + string(os.PathSeparator) + dirEntry.Name())
+						if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) {
+							binaryChan <- fileInfo.Name()
+						}
+					}
+				}
+			}(path)
+		}
+
+		go func() {
+			for fileName := range binaryChan {
+				binariesInPath = append(binariesInPath, fileName)
+			}
+		}()
+
+		wgPaths.Wait()
+		DbgPrintf("Found %d commands in total\n", len(binariesInPath))
+		DbgPrintf(" $PATH search took %s\n", time.Since(timeStart))
+	} else {
+		DbgPrintln("Warn: Either $PATH does not exist, or it is empty")
+	}
 }
 
 func (r readline) GetLine() (string, error) {
@@ -96,6 +129,7 @@ func (r readline) GetLine() (string, error) {
 				tabCount = 0
 			default:
 				if tabCount == 2 {
+					matchingBinariesCache := slices.Clip(matchingBinariesCache)
 					fmt.Fprintf(os.Stdout, "\n%s\n", strings.Join(matchingBinariesCache, " "))
 					matchingBinariesCache = nil
 					tabCount = 0
@@ -120,42 +154,13 @@ func (r readline) GetLine() (string, error) {
 }
 
 func getMatchingBinariesInPath(wordPart string) []string {
-	var result []string
-	if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
-
-		var wgPaths sync.WaitGroup
-		binaryChan := make(chan string, 10)
-
-		for path := range strings.SplitSeq(pathValue, string(os.PathListSeparator)) {
-			wgPaths.Add(1)
-			go func(path string) { // launch a goroutine for every directory. Capture path to avoid referencing the "referenced loop var in a goroutine" gotcha (https://go.dev/wiki/CommonMistakes)
-				defer wgPaths.Done()
-				dirEntries, err := os.ReadDir(path)
-				if err == nil {
-					for _, dirEntry := range dirEntries {
-						fileInfo, err := os.Stat(path + string(os.PathSeparator) + dirEntry.Name())
-						if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.HasPrefix(fileInfo.Name(), wordPart) {
-							binaryChan <- fileInfo.Name()
-						}
-					}
-				}
-			}(path)
+	var matching []string
+	for _, binary := range binariesInPath {
+		if strings.HasPrefix(binary, wordPart) {
+			matching = append(matching, binary)
 		}
-
-		go func() {
-			for fileName := range binaryChan {
-				result = append(result, fileName)
-			}
-		}()
-
-		wgPaths.Wait()
 	}
-	if len(result) > 0 {
-		DbgPrintf("\nFound %d commands in total", len(result))
-	} else {
-		DbgPrintf("\nNo completion found anywhere in path for %s\n", wordPart)
-	}
-	return result
+	return matching
 }
 
 func getStringsWithSubstring(Strings []string, Substring string) []int {
