@@ -17,6 +17,11 @@ type readline struct {
 
 var Readline = readline{Completions: []string{"echo", "exit"}} // FIXME: this is just to see if it passes codecrafters test. Will un-hard-code later (and add a way to populate comps)
 
+var binariesInPath []string
+
+func init() {
+}
+
 func (r readline) GetLine() (string, error) {
 	ps1cached := GetPS1()
 	var line string
@@ -116,36 +121,22 @@ func (r readline) GetLine() (string, error) {
 
 func getMatchingBinariesInPath(wordPart string) []string {
 	var result []string
-	// DbgPrintf("\nsearcing for %s\n", wordPart)
 	if pathValue, exists := os.LookupEnv("PATH"); exists && len(pathValue) > 0 {
 
 		var wgPaths sync.WaitGroup
 		binaryChan := make(chan string, 10)
 
 		for path := range strings.SplitSeq(pathValue, string(os.PathListSeparator)) {
-			// DbgPrintf("  Currently looking in %s\n", path)
 			wgPaths.Add(1)
 			go func(path string) { // launch a goroutine for every directory. Capture path to avoid referencing the "referenced loop var in a goroutine" gotcha (https://go.dev/wiki/CommonMistakes)
 				defer wgPaths.Done()
 				dirEntries, err := os.ReadDir(path)
 				if err == nil {
-					var wgFiles sync.WaitGroup
 					for _, dirEntry := range dirEntries {
-						wgFiles.Add(1)
-
-						// Launching a goroutine for each file is probably not a good idea
-						// in practice the context switching and contention cost will probably dominate.
-						// And indeed some cursory testing shows "negative performance gain" with this but I haven't done a proper benchmark
-						// I'll leave this here for now for education
-						go func(fileName string) { // we don't have to do the evaluate/capture for path and wordpart here because they will not be changing in the immediate outer scope
-							// DbgPrintf("    investitagating %s\n", dirEntry.Name())
-							fileInfo, err := os.Stat(path + string(os.PathSeparator) + fileName)
-							if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.HasPrefix(fileInfo.Name(), wordPart) {
-								// DbgPrintf("      \033[32mshould work! (%s->%s)\n\033[0m", path, fileInfo.Name())
-								binaryChan <- fileInfo.Name()
-								wgFiles.Done()
-							}
-						}(dirEntry.Name())
+						fileInfo, err := os.Stat(path + string(os.PathSeparator) + dirEntry.Name())
+						if err == nil && (fileInfo.Mode().Perm()&0o0100 != 0) && strings.HasPrefix(fileInfo.Name(), wordPart) {
+							binaryChan <- fileInfo.Name()
+						}
 					}
 				}
 			}(path)
