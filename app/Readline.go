@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"slices"
 	"strings"
@@ -155,11 +156,34 @@ func (r readline) GetLine() (string, error) {
 
 func getMatchingBinariesInPath(wordPart string) []string {
 	var matching []string
+	shortestMatchLength := math.MaxInt
 	for _, binary := range binariesInPath {
 		if strings.HasPrefix(binary, wordPart) {
 			matching = append(matching, binary)
+			shortestMatchLength = min(len(binary), shortestMatchLength)
+		}
+	} // got all the binaries that start with our completion string
+
+	if len(matching) == 0 {
+		return matching
+	}
+
+	expandedCompletion := []rune(wordPart)
+	for j := len(wordPart); j < shortestMatchLength; j++ {
+
+		allCandidatesMatch := true
+
+		for i := 1; i < len(matching); i++ { // check if every rune in this position is the same in all matches
+			currentRune := []rune(matching[i])[j]       //
+			firstElementsRune := []rune(matching[0])[j] // could have used any match because just one having a different rune is enough to terminate the search but using the first (0th) one makes this loop more convenient
+			allCandidatesMatch = allCandidatesMatch && (currentRune == firstElementsRune)
+		}
+
+		if allCandidatesMatch {
+			expandedCompletion = append(expandedCompletion, rune(matching[0][j]))
 		}
 	}
+	DbgPrintf("\nexpanded match: %s\n", string(expandedCompletion))
 	return matching
 }
 
