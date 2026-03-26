@@ -86,21 +86,17 @@ func (r readline) GetLine() (string, error) {
 			tabCount++
 			lastSpaceInLine := strings.LastIndex(line, " ")
 			var lastWord string
-			isFirstWord := false
+			var lineBeforeCompletion string
 			if lastSpaceInLine == -1 { // either this is the first word (or just tab on an empty line)
-				lastSpaceInLine = 0
-				isFirstWord = true
+				// lineBeforeCompletion = "" // nothing before the word we are processing
 				lastWord = line // first and last word..
 			} else {
-				lastWord = line[lastSpaceInLine+1:] //+1 to drop space
+				lineBeforeCompletion = line[:lastSpaceInLine+1] // part of the line until the last space + the space itself
+				lastWord = line[lastSpaceInLine+1:]             //+1 to drop space
 			}
 			builtinCompletionCandidates := getStringsWithSubstring(Readline.Completions, lastWord)
 			if len(builtinCompletionCandidates) > 0 {
-				restoredSpace := ""
-				if !isFirstWord { // if there were words before this, restore the space we cut off
-					restoredSpace = " "
-				}
-				line = line[:lastSpaceInLine] + restoredSpace + Readline.Completions[builtinCompletionCandidates[0]] + " " // replace the last word with the first completion
+				line = lineBeforeCompletion + Readline.Completions[builtinCompletionCandidates[0]] + " " // replace the last word with the first completion
 				tabCount = 0
 				break
 			}
@@ -118,26 +114,18 @@ func (r readline) GetLine() (string, error) {
 				DbgPrintf("\nusing completion cache for results in path\n")
 			}
 
+			line = lineBeforeCompletion + longestPrefix // replace the last word with the longest common prefix within the matches
 			switch len(matchingBinariesCache) {
 			case 0:
 				// This is only happens if no completion candidates are in builtins or in path
 				fmt.Printf("%c", '\a') // ding
 			case 1:
-				restoredSpace := ""
-				if !isFirstWord { // if there were words before this, restore the space we cut off
-					restoredSpace = " "
-				}
-				line = line[:lastSpaceInLine] + restoredSpace + longestPrefix + " " // replace the last word with the first completion
+				line += " "
 				matchingBinariesCache = nil
 				tabCount = 0
 			default:
-				restoredSpace := ""
-				if !isFirstWord { // if there were words before this, restore the space we cut off
-					restoredSpace = " "
-				}
-				line = line[:lastSpaceInLine] + restoredSpace + longestPrefix // replace the last word with the first completion
 				if tabCount == 2 {
-					matchingBinariesCache := slices.Clip(matchingBinariesCache)
+					// matchingBinariesCache := slices.Clip(matchingBinariesCache)
 					fmt.Fprintf(os.Stdout, "\n%s\n", strings.Join(matchingBinariesCache, " "))
 					matchingBinariesCache = nil
 					tabCount = 0
