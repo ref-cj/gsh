@@ -127,11 +127,15 @@ func (r readline) GetLine() (string, error) {
 				if !isFirstWord { // if there were words before this, restore the space we cut off
 					restoredSpace = " "
 				}
-				line = line[:lastSpaceInLine] + restoredSpace + matchingBinariesCache[0] + " " // replace the last word with the first completion
+				line = line[:lastSpaceInLine] + restoredSpace + longestPrefix + " " // replace the last word with the first completion
 				matchingBinariesCache = nil
 				tabCount = 0
 			default:
-				line = longestPrefix
+				restoredSpace := ""
+				if !isFirstWord { // if there were words before this, restore the space we cut off
+					restoredSpace = " "
+				}
+				line = line[:lastSpaceInLine] + restoredSpace + longestPrefix // replace the last word with the first completion
 				if tabCount == 2 {
 					matchingBinariesCache := slices.Clip(matchingBinariesCache)
 					fmt.Fprintf(os.Stdout, "\n%s\n", strings.Join(matchingBinariesCache, " "))
