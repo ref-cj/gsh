@@ -165,7 +165,7 @@ func getMatchingBinariesInPath(wordPart string) (matches []string, longestPrefix
 	} // got all the binaries that start with our completion string
 
 	if len(matching) == 0 {
-		return matching, ""
+		return matching, wordPart
 	}
 
 	expandedCompletion := []rune(wordPart)
