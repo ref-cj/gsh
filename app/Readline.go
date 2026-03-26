@@ -182,7 +182,6 @@ func getMatchingBinariesInPath(wordPart string) (matches []string, longestPrefix
 			expandedCompletion = append(expandedCompletion, rune(matching[0][j]))
 		}
 	}
-	DbgPrintf("\nexpanded match: %s\n", string(expandedCompletion))
 	return matching, string(expandedCompletion)
 }
 
