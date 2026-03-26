@@ -4,3 +4,4 @@ notes todos fixmes
 PS1() replace ghs with timing to see how it looks
 move "binaries in cache" to init() in readline
 context and cancellation in the goroutines in readline
+streamline the handling of completions to use the same path for both builtins and binaries in path
