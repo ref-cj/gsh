@@ -108,6 +108,7 @@ func (r readline) GetLine() (string, error) {
 				// neither zsh nor bash does this without additional configuration
 				// and I kind of don't like it. Tie not doing this to a flag maybe? we can set in our env and codecrafters can ignore on theirs
 				slices.Sort(matchingBinariesCache)
+				matchingBinariesCache = slices.Compact(matchingBinariesCache) // this removes dupes if the slice is sorted. we might as well, since the slice is already sorted. AND bash and zsh both work this way.
 				end := time.Since(begin)
 				DbgPrintf("\nsearch (and sort) took: %v\n", end)
 			} else {
