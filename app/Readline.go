@@ -67,6 +67,7 @@ func (r readline) GetLine() (string, error) {
 	//  This means if a binary is added to a location in path (or if the value of PATH changes) we wont be able to use it in a completion until the shell is restarted.
 	//  This scenario is obviously very rare and neither bash, nor zsh support this either. But something to keep in mind
 	var matchingBinariesCache []string
+	var longestPrefix string
 
 	for {
 		readedRune, size, err := input.ReadRune()
@@ -100,12 +101,13 @@ func (r readline) GetLine() (string, error) {
 					restoredSpace = " "
 				}
 				line = line[:lastSpaceInLine] + restoredSpace + Readline.Completions[builtinCompletionCandidates[0]] + " " // replace the last word with the first completion
+				tabCount = 0
 				break
 			}
 
 			if len(matchingBinariesCache) == 0 {
 				begin := time.Now()
-				matchingBinariesCache = getMatchingBinariesInPath(lastWord)
+				matchingBinariesCache, longestPrefix = getMatchingBinariesInPath(lastWord)
 				// this is required by codecrafters tests
 				// neither zsh nor bash does this without additional configuration
 				// and I kind of don't like it. Tie not doing this to a flag maybe? we can set in our env and codecrafters can ignore on theirs
@@ -129,6 +131,7 @@ func (r readline) GetLine() (string, error) {
 				matchingBinariesCache = nil
 				tabCount = 0
 			default:
+				line = longestPrefix
 				if tabCount == 2 {
 					matchingBinariesCache := slices.Clip(matchingBinariesCache)
 					fmt.Fprintf(os.Stdout, "\n%s\n", strings.Join(matchingBinariesCache, " "))
@@ -141,11 +144,14 @@ func (r readline) GetLine() (string, error) {
 
 		case '\b', 127: // \b is 0x8 which is backspace. But both konsole and ghostty send 127 (DEL) for backspace. This case condition covers both
 			if len(line) > 0 {
+				matchingBinariesCache = []string{}
 				line = line[:len(line)-1]
+				tabCount = 0
 			}
 		default:
 			line += string(readedRune)
 			matchingBinariesCache = []string{}
+			tabCount = 0
 		}
 		fmt.Fprintf(os.Stdout, "\r\033[K%s%s", ps1cached, line) // \r to go to the beginning of the line, and ESC^K to delete from cursor position to the end of line
 		if done {
@@ -155,7 +161,7 @@ func (r readline) GetLine() (string, error) {
 	return line, nil
 }
 
-func getMatchingBinariesInPath(wordPart string) []string {
+func getMatchingBinariesInPath(wordPart string) (matches []string, longestPrefix string) {
 	var matching []string
 	shortestMatchLength := math.MaxInt
 	for _, binary := range binariesInPath {
@@ -166,7 +172,7 @@ func getMatchingBinariesInPath(wordPart string) []string {
 	} // got all the binaries that start with our completion string
 
 	if len(matching) == 0 {
-		return matching
+		return matching, ""
 	}
 
 	expandedCompletion := []rune(wordPart)
@@ -185,7 +191,7 @@ func getMatchingBinariesInPath(wordPart string) []string {
 		}
 	}
 	DbgPrintf("\nexpanded match: %s\n", string(expandedCompletion))
-	return matching
+	return matching, string(expandedCompletion)
 }
 
 func getStringsWithSubstring(Strings []string, Substring string) []int {
