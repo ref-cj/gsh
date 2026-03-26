@@ -145,6 +145,7 @@ func (r readline) GetLine() (string, error) {
 			}
 		default:
 			line += string(readedRune)
+			matchingBinariesCache = []string{}
 		}
 		fmt.Fprintf(os.Stdout, "\r\033[K%s%s", ps1cached, line) // \r to go to the beginning of the line, and ESC^K to delete from cursor position to the end of line
 		if done {
