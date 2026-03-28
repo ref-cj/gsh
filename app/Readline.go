@@ -99,7 +99,7 @@ func (r readline) GetLine() (string, error) {
 
 			if len(matchingBinariesCache) == 0 {
 				begin := time.Now()
-				matchingBinariesCache, longestPrefix = getMatchingBinariesInPath(lastWord)
+				matchingBinariesCache, longestPrefix = getMatchingCompletions(binariesInPath, lastWord)
 				// this is required by codecrafters tests
 				// neither zsh nor bash does this without additional configuration
 				// and I kind of don't like it. Tie not doing this to a flag maybe? we can set in our env and codecrafters can ignore on theirs
@@ -150,10 +150,10 @@ func (r readline) GetLine() (string, error) {
 	return line, nil
 }
 
-func getMatchingBinariesInPath(wordPart string) (matches []string, longestPrefix string) {
+func getMatchingCompletions(haystack []string, wordPart string) (matches []string, longestPrefix string) {
 	var matching []string
 	shortestMatchLength := math.MaxInt
-	for _, binary := range binariesInPath {
+	for _, binary := range haystack {
 		if strings.HasPrefix(binary, wordPart) {
 			matching = append(matching, binary)
 			shortestMatchLength = min(len(binary), shortestMatchLength)
