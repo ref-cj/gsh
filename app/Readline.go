@@ -16,7 +16,7 @@ type readline struct {
 	Completions []string // a smart implementation would do a trie here
 }
 
-var Readline = readline{Completions: []string{"echo", "exit"}} // FIXME: this is just to see if it passes codecrafters test. Will un-hard-code later (and add a way to populate comps)
+var Readline readline
 
 var binariesInPath []string
 

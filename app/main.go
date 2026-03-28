@@ -31,13 +31,18 @@ type builtin func([]string, redirections)
 
 var builtins = make(map[string]builtin, 5)
 
-func main() {
+func init() {
 	builtins["echo"] = echo
 	builtins["exit"] = exit
 	builtins["type"] = toipe
 	builtins["pwd"] = pwd
 	builtins["cd"] = cd
+	for key := range builtins {
+		Readline.Completions = append(Readline.Completions, key)
+	}
+}
 
+func main() {
 	for {
 		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
 		// And maybe show it in debug mode by default?
