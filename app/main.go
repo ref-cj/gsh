@@ -19,14 +19,14 @@ const (
 	IOError           = 4
 )
 
+// considered generalizing this into a more general "command context" that includes the redirs
+// deciding against it for now in favour of "doing the simplest thing possible"
 type redirections struct {
 	in  *os.File
 	out *os.File
 	err *os.File
 }
 
-// considered generalizing this into a more general "command context" that includes the redirs
-// deciding against it for now in favour of "doing the simplest thing possible"
 type builtin func([]string, redirections)
 
 var builtins = make(map[string]builtin, 5)
