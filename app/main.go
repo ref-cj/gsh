@@ -29,14 +29,16 @@ type redirections struct {
 
 type builtin func([]string, redirections)
 
-var builtins = make(map[string]builtin, 5)
+var builtins map[string]builtin
 
 func init() {
-	builtins["echo"] = echo
-	builtins["exit"] = exit
-	builtins["type"] = toipe
-	builtins["pwd"] = pwd
-	builtins["cd"] = cd
+	builtins = map[string]builtin{
+		"echo": echo,
+		"exit": exit,
+		"type": toipe,
+		"pwd":  pwd,
+		"cd":   cd,
+	}
 	for key := range builtins {
 		Readline.Completions = append(Readline.Completions, key)
 	}
