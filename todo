@@ -4,3 +4,4 @@ notes todos fixmes
 PS1() replace ghs with timing to see how it looks
 context and cancellation in the goroutines in readline
 streamline the handling of completions to use the same path for both builtins and binaries in path
+DbgPrint* should probably output to either a file or stderr
