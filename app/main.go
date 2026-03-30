@@ -78,6 +78,9 @@ func __SimpleExampleForPipeImpl() {
 */
 
 func main() {
+	commandHasPipes := false
+	var secondCommand string // very bad! assumes only one pipe!
+	var secondCommandArgs string
 	for {
 		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
 		// And maybe show it in debug mode by default?
@@ -87,6 +90,34 @@ func main() {
 		fmt.Print(GetPS1())
 
 		inputCommand, err := Readline.GetLine()
+
+		// FIXME: this is hopefully the simple possible (albeit very wrong!) implementation of the pipe.
+		// done as just a PoC to be replaced later with one that actually works Readline
+		// hopefully this wont be the combo breaker when it comes to actually removing "temp" code
+		//
+
+		commands := strings.Split(inputCommand, "|")
+		if len(commands) > 1 {
+			// we will only consider one piping in this PoC
+			DbgPrintf("before pipe: %s\n", commands[0])
+			DbgPrintf("after pipe: '%s'\n", commands[1])
+			commands[0] = strings.TrimRight(commands[0], " \n") // lets not trim left IN CASE we want to implement the history feature where commands beginning with space are not appendend
+			commands[1] = strings.Trim(commands[1], " ")
+			commandHasPipes = true
+			endOfFirstWord := strings.Index(commands[1], " ") // find first space after the pipe "wc<spc>-l"
+			if endOfFirstWord != -1 {                         // if there is an argument to the second command
+				secondCommandArgs = strings.Trim(commands[1][endOfFirstWord:], " \n")
+				secondCommand = commands[1][:endOfFirstWord]
+			} else {
+				secondCommand = strings.Trim(commands[1], " \n")
+			}
+
+			DbgPrintf("second command:      '%s'\n", secondCommand)
+			DbgPrintf("second command args: '%s'\n", secondCommandArgs)
+
+			// os.Exit(0)
+			inputCommand = commands[0] + "\n" //
+		}
 
 		Terminal.Cookify() // revert changes we did for raw mode
 		if err != nil {
@@ -224,10 +255,39 @@ func main() {
 			if _, exists := executableExistsInPath(outputCommandName); exists {
 				cmd := exec.Command(outputCommandName, outputCommandFields[1:]...)
 				DbgPrintf("running command %s with args %v\n", outputCommandName, outputCommandFields[1:])
-				cmd.Stdin = commandRedirections.in
-				cmd.Stdout = commandRedirections.out
-				cmd.Stderr = commandRedirections.err
-				cmd.Run()
+				if commandHasPipes {
+
+					r, w, _ := os.Pipe()
+					var cmd2 *exec.Cmd
+					if secondCommandArgs == "" { // this is because I am cutting a huge corner here and passing all the args (and flags) as one string
+						cmd2 = exec.Command(secondCommand, []string{}...)
+					} else {
+						cmd2 = exec.Command(secondCommand, secondCommandArgs)
+					}
+					DbgPrintf("cmd2: %s\n", cmd2)
+					cmd.Stdout = w
+					cmd2.Stdin = r
+					cmd2.Stdout = os.Stdout
+					cmd2.Stderr = os.Stdout
+					cmd.Start()
+					ee := cmd2.Start()
+					DbgPrintf("cmd2 ee: %s\n", ee)
+
+					cmd.Wait()
+					w.Close()
+					e := cmd2.Wait()
+					DbgPrintf("cmd2 e: %s\n", e)
+					r.Close()
+
+				} else {
+					cmd.Stdin = commandRedirections.in
+					cmd.Stdout = commandRedirections.out
+					cmd.Stderr = commandRedirections.err
+					cmd.Run()
+				}
+				commandHasPipes = false
+				secondCommand = ""
+				secondCommandArgs = ""
 				continue
 
 			}
