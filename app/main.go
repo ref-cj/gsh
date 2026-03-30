@@ -44,6 +44,39 @@ func init() {
 	}
 }
 
+/*
+func __SimpleExampleForPipeImpl() {
+	cmd := exec.Command("ls", "-lash")
+	cmd2 := exec.Command("grep", "\\s\\.")
+	so, _ := os.Create("dots")
+	r, w, _ := os.Pipe()
+	cmd.Stdout = w
+	cmd2.Stdin = r
+	cmd2.Stdout = so
+
+	var wgPip sync.WaitGroup
+
+	wgPip.Go(func() {
+		if x := cmd2.Start(); x != nil {
+			fmt.Printf("cmd2: err:%v\n", x)
+		}
+		cmd2.Wait()
+		so.Close()
+		r.Close()
+	})
+	wgPip.Go(func() {
+		if y := cmd.Start(); y != nil {
+			fmt.Printf("cmd: err:%v\n", y)
+		}
+		cmd.Wait()
+		w.Close()
+	})
+
+	wgPip.Wait()
+	os.Exit(0)
+}
+*/
+
 func main() {
 	for {
 		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
