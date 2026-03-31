@@ -259,24 +259,27 @@ func main() {
 
 					r, w, _ := os.Pipe()
 					var cmd2 *exec.Cmd
-					if secondCommandArgs == "" { // this is because I am cutting a huge corner here and passing all the args (and flags) as one string
+					if secondCommandArgs == "" {
 						cmd2 = exec.Command(secondCommand, []string{}...)
 					} else {
 						cmd2 = exec.Command(secondCommand, secondCommandArgs)
 					}
-					DbgPrintf("cmd2: %s\n", cmd2)
+					DbgPrintf("running 2ND command %s with args %v\n", secondCommand, secondCommandArgs)
 					cmd.Stdout = w
 					cmd2.Stdin = r
 					cmd2.Stdout = os.Stdout
 					cmd2.Stderr = os.Stdout
 					cmd.Start()
 					ee := cmd2.Start()
-					DbgPrintf("cmd2 ee: %s\n", ee)
-
+					if ee != nil {
+						DbgPrintf("cmd2 start error: %s\n", ee)
+					}
 					cmd.Wait()
 					w.Close()
 					e := cmd2.Wait()
-					DbgPrintf("cmd2 e: %s\n", e)
+					if ee != nil {
+						DbgPrintf("cmd2 e: %s\n", e)
+					}
 					r.Close()
 
 				} else {
