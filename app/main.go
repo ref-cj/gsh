@@ -260,12 +260,8 @@ func main() {
 
 					r, w, _ := os.Pipe()
 					var cmd2 *exec.Cmd
-					if secondCommandArgs == "" {
-						cmd2 = exec.Command(secondCommand, []string{}...)
-					} else {
-						cmd2 = exec.Command(secondCommand, secondCommandArgs)
-					}
-					DbgPrintf("running 2ND command %s with args %v\n", secondCommand, secondCommandArgs)
+					secondCommandArgsSlice := strings.FieldsFunc(secondCommandArgs, func(r rune) bool { return r == ' ' })
+					cmd2 = exec.Command(secondCommand, secondCommandArgsSlice...)
 					cmd.Stdout = w
 					cmd2.Stdin = r
 					cmd2.Stdout = os.Stdout
