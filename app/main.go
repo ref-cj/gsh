@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // Did not use iota here because I wanted the error codes to be stable
@@ -269,18 +270,32 @@ func main() {
 					cmd2.Stdin = r
 					cmd2.Stdout = os.Stdout
 					cmd2.Stderr = os.Stdout
-					cmd.Start()
-					ee := cmd2.Start()
-					if ee != nil {
-						DbgPrintf("cmd2 start error: %s\n", ee)
-					}
-					cmd.Wait()
-					w.Close()
-					e := cmd2.Wait()
-					if ee != nil {
-						DbgPrintf("cmd2 e: %s\n", e)
-					}
-					r.Close()
+
+					var cmdsWG sync.WaitGroup
+
+					cmdsWG.Add(1)
+					go func(theWG *sync.WaitGroup) {
+						defer theWG.Done()
+						defer w.Close()
+
+						c1e := cmd.Run()
+						if c1e != nil {
+							DbgPrintf("cmd error: %s\n", c1e)
+						}
+					}(&cmdsWG)
+
+					cmdsWG.Add(1)
+					go func(theWG *sync.WaitGroup) {
+						defer theWG.Done()
+						defer r.Close()
+
+						c2e := cmd2.Run()
+						if c2e != nil {
+							DbgPrintf("cmd2 error: %s\n", c2e)
+						}
+					}(&cmdsWG)
+
+					cmdsWG.Wait()
 
 				} else {
 					cmd.Stdin = commandRedirections.in
