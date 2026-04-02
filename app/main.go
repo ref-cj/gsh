@@ -96,6 +96,10 @@ func main() {
 		// done as just a PoC to be replaced later with one that actually works Readline
 		// hopefully this wont be the combo breaker when it comes to actually removing "temp" code
 		//
+		// this actually turns out to pass the tests for a single pipe.
+		// next stage is pipe with a builtin,and this can be made to work with that with minimal effort as well
+		// the third and final stage will be multiple pipes and even though we can keep piling on hacks and pass that with a 10 minutes effort as well,
+		// I think we can start reforming this into a proper implementation now that we know mostly how it's supposded to work
 
 		commands := strings.Split(inputCommand, "|")
 		if len(commands) > 1 {
