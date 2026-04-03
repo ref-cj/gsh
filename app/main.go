@@ -20,12 +20,16 @@ const (
 	IOError           = 4
 )
 
-// considered generalizing this into a more general "command context" that includes the redirs
-// deciding against it for now in favour of "doing the simplest thing possible"
 type redirections struct {
 	in  *os.File
 	out *os.File
 	err *os.File
+}
+
+type command struct {
+	commandName         string
+	commandArguments    []string
+	commandRedirections redirections
 }
 
 type builtin func([]string, redirections)
@@ -83,6 +87,7 @@ func main() {
 	var secondCommand string // very bad! assumes only one pipe!
 	var secondCommandArgs string
 	for {
+		commandsToBeRun := []command{}
 		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
 		// And maybe show it in debug mode by default?
 
@@ -90,38 +95,20 @@ func main() {
 
 		fmt.Print(GetPS1())
 
-		inputCommand, err := Readline.GetLine()
+		fullInputCommand, err := Readline.GetLine()
 
-		// FIXME: this is hopefully the simple possible (albeit very wrong!) implementation of the pipe.
-		// done as just a PoC to be replaced later with one that actually works Readline
-		// hopefully this wont be the combo breaker when it comes to actually removing "temp" code
-		//
-		// this actually turns out to pass the tests for a single pipe.
-		// next stage is pipe with a builtin,and this can be made to work with that with minimal effort as well
-		// the third and final stage will be multiple pipes and even though we can keep piling on hacks and pass that with a 10 minutes effort as well,
-		// I think we can start reforming this into a proper implementation now that we know mostly how it's supposded to work
-
-		commands := strings.Split(inputCommand, "|")
+		commands := strings.Split(fullInputCommand, "|")
 		if len(commands) > 1 {
-			// we will only consider one piping in this PoC
-			DbgPrintf("before pipe: %s\n", commands[0])
-			DbgPrintf("after pipe: '%s'\n", commands[1])
-			commands[0] = strings.TrimRight(commands[0], " \n") // lets not trim left IN CASE we want to implement the history feature where commands beginning with space are not appendend
-			commands[1] = strings.Trim(commands[1], " ")
+			//				commands[0] = strings.TrimRight(commands[0], " \n") // lets not trim left IN CASE we want to implement the history feature where commands beginning with space are not appendend
+			commands[0] = strings.TrimRight(commands[0], " ") // if it's the first command and there are multiples, there wouldn't be a newline, right?!
 			commandHasPipes = true
-			endOfFirstWord := strings.Index(commands[1], " ") // find first space after the pipe "wc<spc>-l"
-			if endOfFirstWord != -1 {                         // if there is an argument to the second command
-				secondCommandArgs = strings.Trim(commands[1][endOfFirstWord:], " \n")
-				secondCommand = commands[1][:endOfFirstWord]
-			} else {
-				secondCommand = strings.Trim(commands[1], " \n")
+
+			for i := 1; i < len(commands); i++ {
+				commands[1] = strings.Trim(commands[1], " ")
 			}
 
-			DbgPrintf("second command:      '%s'\n", secondCommand)
-			DbgPrintf("second command args: '%s'\n", secondCommandArgs)
+			DbgPrintf("all commands with all pipes: %v", commands)
 
-			// os.Exit(0)
-			inputCommand = commands[0] + "\n" //
 		}
 
 		Terminal.Cookify() // revert changes we did for raw mode
@@ -129,137 +116,145 @@ func main() {
 			fmt.Fprintf(os.Stderr, "Could not read input from stdin %s \n", err)
 			os.Exit(commandUsageError)
 		} else {
-			var outputCommandFields []string
-			inputCommandRunes := []rune(inputCommand)
-			outputCommandBeingBuilt := ""
-			commandRedirections := redirections{in: os.Stdin, out: os.Stdout, err: os.Stderr}
+			for _, inputCommand := range commands {
+				var outputCommandFields []string
+				inputCommandRunes := []rune(inputCommand)
+				outputCommandBeingBuilt := ""
+				commandRedirections := redirections{in: os.Stdin, out: os.Stdout, err: os.Stderr}
 
-			for len(inputCommand) > 0 {
-				startToken := GetNextStartToken(inputCommandRunes)
-				DbgPrintTokenln("our new startToken", startToken, inputCommandRunes[startToken.GetPosition()])
-				var endToken Token
-				var redirectToken RedirectToken
-				processingRedirection := false
-				inputCommandRunes = inputCommandRunes[startToken.GetPosition():]
-				inputCommand = inputCommand[startToken.GetPosition():]
+				for len(inputCommand) > 0 {
+					startToken := GetNextStartToken(inputCommandRunes)
+					DbgPrintTokenln("our new startToken", startToken, inputCommandRunes[startToken.GetPosition()])
+					var endToken Token
+					var redirectToken RedirectToken
+					processingRedirection := false
+					inputCommandRunes = inputCommandRunes[startToken.GetPosition():]
+					inputCommand = inputCommand[startToken.GetPosition():]
 
-				switch startToken.GetType() {
-				case Plain:
-					endToken, err = GetNextPlainTokenEnd(inputCommandRunes)
-					if err != nil {
-						fmt.Printf("Error while getting Plain End Token: %s", err)
-						os.Exit(generalError)
-					}
-					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
-
-				case SingleQuote:
-					endToken, err = GetNextSingleQuoteTokenEnd(inputCommandRunes)
-					if err != nil {
-						fmt.Printf("Error while getting SingleQuote End Token: %s", err)
-						os.Exit(generalError)
-					}
-					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
-
-				case DoubleQuote:
-					endToken, err = GetNextDoubleQuoteTokenEnd(inputCommandRunes)
-					if err != nil {
-						fmt.Printf("Error while getting DoubleQuote End Token: %s", err)
-						os.Exit(generalError)
-					}
-					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
-
-				case Redirection:
-					processingRedirection = true
-					redirectToken, err = GetNextRedirectTokenEnd(inputCommandRunes)
-					DbgPrintf("Got RedirectEndToken: %v\n", redirectToken)
-					if err != nil {
-						fmt.Printf("Error while getting RedirectToken End Token: %s", err)
-						os.Exit(generalError)
-					}
-					endToken = redirectToken.Token
-					switch redirectToken.Direction {
-					case RedirectOutput:
-						var outputFile *os.File
-						if redirectToken.ShouldAppend {
-							outputFile, err = os.OpenFile(redirectToken.FileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-							if err != nil {
-								fmt.Printf("Output file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
-								os.Exit(IOError)
-							}
-							commandRedirections.out = outputFile
-						} else { // should not append
-							outputFile, err = os.Create(redirectToken.FileName)
-							if err != nil {
-								fmt.Printf("Output file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
-								os.Exit(IOError)
-							}
-							commandRedirections.out = outputFile
-						}
-					case RedirectInput:
-						inputFile, err := os.Open(redirectToken.FileName)
+					switch startToken.GetType() {
+					case Plain:
+						endToken, err = GetNextPlainTokenEnd(inputCommandRunes)
 						if err != nil {
-							fmt.Printf("Input file for command redirect could not be opened: %s\n", err)
-							os.Exit(IOError)
+							fmt.Printf("Error while getting Plain End Token: %s", err)
+							os.Exit(generalError)
 						}
-						commandRedirections.in = inputFile
-					case RedirectError:
-						var errorOutput *os.File
-						if redirectToken.ShouldAppend {
-							errorOutput, err = os.OpenFile(redirectToken.FileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+						DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
+
+					case SingleQuote:
+						endToken, err = GetNextSingleQuoteTokenEnd(inputCommandRunes)
+						if err != nil {
+							fmt.Printf("Error while getting SingleQuote End Token: %s", err)
+							os.Exit(generalError)
+						}
+						DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
+
+					case DoubleQuote:
+						endToken, err = GetNextDoubleQuoteTokenEnd(inputCommandRunes)
+						if err != nil {
+							fmt.Printf("Error while getting DoubleQuote End Token: %s", err)
+							os.Exit(generalError)
+						}
+						DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position])
+
+					case Redirection:
+						processingRedirection = true
+						redirectToken, err = GetNextRedirectTokenEnd(inputCommandRunes)
+						DbgPrintf("Got RedirectEndToken: %v\n", redirectToken)
+						if err != nil {
+							fmt.Printf("Error while getting RedirectToken End Token: %s", err)
+							os.Exit(generalError)
+						}
+						endToken = redirectToken.Token
+						switch redirectToken.Direction {
+						case RedirectOutput:
+							var outputFile *os.File
+							if redirectToken.ShouldAppend {
+								outputFile, err = os.OpenFile(redirectToken.FileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+								if err != nil {
+									fmt.Printf("Output file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
+									os.Exit(IOError)
+								}
+								commandRedirections.out = outputFile
+							} else { // should not append
+								outputFile, err = os.Create(redirectToken.FileName)
+								if err != nil {
+									fmt.Printf("Output file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
+									os.Exit(IOError)
+								}
+								commandRedirections.out = outputFile
+							}
+						case RedirectInput:
+							inputFile, err := os.Open(redirectToken.FileName)
 							if err != nil {
-								fmt.Printf("Error file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
+								fmt.Printf("Input file for command redirect could not be opened: %s\n", err)
 								os.Exit(IOError)
 							}
-							commandRedirections.err = errorOutput
-						} else { // should not append
-							errorOutput, err = os.Create(redirectToken.FileName)
-							if err != nil {
-								fmt.Printf("Error file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
-								os.Exit(IOError)
+							commandRedirections.in = inputFile
+						case RedirectError:
+							var errorOutput *os.File
+							if redirectToken.ShouldAppend {
+								errorOutput, err = os.OpenFile(redirectToken.FileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+								if err != nil {
+									fmt.Printf("Error file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
+									os.Exit(IOError)
+								}
+								commandRedirections.err = errorOutput
+							} else { // should not append
+								errorOutput, err = os.Create(redirectToken.FileName)
+								if err != nil {
+									fmt.Printf("Error file: '%s' for command redirect could not be opened: %s\n", redirectToken.FileName, err)
+									os.Exit(IOError)
+								}
+								commandRedirections.err = errorOutput
 							}
-							commandRedirections.err = errorOutput
+						default:
+							panic(fmt.Sprintf("unexpected main.RedirectType: %#v", redirectToken.Direction))
 						}
+
+					case Termination:
+						endToken, err = Token{Position: 1, Type: Termination}, nil
+						DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position-1]) // termination is a special boy
+
 					default:
-						panic(fmt.Sprintf("unexpected main.RedirectType: %#v", redirectToken.Direction))
+						panic("unimplemented token type")
+					}
+					if processingRedirection {
+					} else {
+						outputCommandBeingBuilt += GetSanitisedCommandSegment(inputCommand, endToken)
 					}
 
-				case Termination:
-					endToken, err = Token{Position: 1, Type: Termination}, nil
-					DbgPrintTokenln("our new endToken", endToken, inputCommandRunes[endToken.Position-1]) // termination is a special boy
+					inputCommand = inputCommand[endToken.Position:]
+					inputCommandRunes = inputCommandRunes[endToken.Position:]
+					DbgSanitisedPrintf("new command: %v\n", inputCommand)
+					DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
 
-				default:
-					panic("unimplemented token type")
-				}
-				if processingRedirection {
-				} else {
-					outputCommandBeingBuilt += GetSanitisedCommandSegment(inputCommand, endToken)
+					if (!processingRedirection) && (endToken.Type != Termination) && (inputCommandRunes[0] == ' ' || inputCommandRunes[0] == '\n') {
+						outputCommandFields = append(outputCommandFields, outputCommandBeingBuilt)
+						DbgPrintf("new commandFields: %v\n", outputCommandFields)
+						outputCommandBeingBuilt = ""
+					}
 				}
 
-				inputCommand = inputCommand[endToken.Position:]
-				inputCommandRunes = inputCommandRunes[endToken.Position:]
-				DbgSanitisedPrintf("new command: %v\n", inputCommand)
-				DbgPrintf("new commandRunes: %v\n", inputCommandRunes)
+				DbgPrintf("We are done, done. Nothing else to process.\n")
+				outputCommandName := outputCommandFields[0]
+				commandsToBeRun = append(commandsToBeRun, command{outputCommandName, outputCommandFields[1:], commandRedirections})
 
-				if (!processingRedirection) && (endToken.Type != Termination) && (inputCommandRunes[0] == ' ' || inputCommandRunes[0] == '\n') {
-					outputCommandFields = append(outputCommandFields, outputCommandBeingBuilt)
-					DbgPrintf("new commandFields: %v\n", outputCommandFields)
-					outputCommandBeingBuilt = ""
-				}
 			}
 
-			DbgPrintf("We are done, done. Nothing else to process.\n")
-			outputCommandName := outputCommandFields[0]
+			// fmt.Fprintf(commandRedirections.out, "%s: command not found\n", outputCommandName)
+		}
+		DbgPrintf("Found %d commands: %v\n", len(commandsToBeRun), commandsToBeRun)
+		for _, command := range commandsToBeRun {
 
-			// is this a builtin?
-			if _builtin, ok := builtins[outputCommandName]; ok {
-				_builtin(outputCommandFields[1:], commandRedirections)
+			if _builtin, ok := builtins[command.commandName]; ok {
+				_builtin(command.commandArguments, command.commandRedirections)
 				continue
 			}
 
 			// maybe we can run it?
-			if _, exists := executableExistsInPath(outputCommandName); exists {
-				cmd := exec.Command(outputCommandName, outputCommandFields[1:]...)
-				DbgPrintf("running command %s with args %v\n", outputCommandName, outputCommandFields[1:])
+			if _, exists := executableExistsInPath(command.commandName); exists {
+				cmd := exec.Command(command.commandName, command.commandArguments...)
+				DbgPrintf("running command %s with args %v\n", command.commandName, command.commandArguments)
 				if commandHasPipes {
 
 					r, w, _ := os.Pipe()
@@ -298,9 +293,9 @@ func main() {
 					cmdsWG.Wait()
 
 				} else {
-					cmd.Stdin = commandRedirections.in
-					cmd.Stdout = commandRedirections.out
-					cmd.Stderr = commandRedirections.err
+					cmd.Stdin = command.commandRedirections.in
+					cmd.Stdout = command.commandRedirections.out
+					cmd.Stderr = command.commandRedirections.err
 					cmd.Run()
 				}
 				commandHasPipes = false
@@ -309,10 +304,6 @@ func main() {
 				continue
 
 			}
-
-			// looks like we don't know what this is
-			// fmt.Fprintf(commandRedirections.out, "%s: command not found\n", strings.Join(outputCommandFields, ""))
-			fmt.Fprintf(commandRedirections.out, "%s: command not found\n", outputCommandName)
 		}
 	}
 }
