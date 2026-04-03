@@ -26,10 +26,19 @@ type redirections struct {
 	err *os.File
 }
 
+type commandType int
+
+const (
+	builtinCommand commandType = iota
+	inPathCommand
+	oopsCommand
+)
+
 type command struct {
 	commandName         string
 	commandArguments    []string
 	commandRedirections redirections
+	commandType         commandType
 }
 
 type builtin func([]string, redirections)
@@ -237,11 +246,22 @@ func main() {
 
 				DbgPrintf("We are done, done. Nothing else to process.\n")
 				outputCommandName := outputCommandFields[0]
-				commandsToBeRun = append(commandsToBeRun, command{outputCommandName, outputCommandFields[1:], commandRedirections})
+				var commandType commandType
+				if _, ok := builtins[outputCommandName]; ok {
+					commandType = builtinCommand
+				} else {
+					if _, exists := executableExistsInPath(outputCommandName); exists {
+						commandType = inPathCommand
+					} else {
+						commandType = oopsCommand
+						fmt.Fprintf(os.Stdout, "%s: command not found\n", outputCommandName)
+						os.Exit(commandUsageError)
+					}
+				}
+
+				commandsToBeRun = append(commandsToBeRun, command{outputCommandName, outputCommandFields[1:], commandRedirections, commandType})
 
 			}
-
-			// fmt.Fprintf(commandRedirections.out, "%s: command not found\n", outputCommandName)
 		}
 		DbgPrintf("Found %d commands: %v\n", len(commandsToBeRun), commandsToBeRun)
 		for _, command := range commandsToBeRun {
