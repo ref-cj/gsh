@@ -109,11 +109,11 @@ func main() {
 		commands := strings.Split(fullInputCommand, "|")
 		if len(commands) > 1 {
 			//				commands[0] = strings.TrimRight(commands[0], " \n") // lets not trim left IN CASE we want to implement the history feature where commands beginning with space are not appendend
-			commands[0] = strings.TrimRight(commands[0], " ") // if it's the first command and there are multiples, there wouldn't be a newline, right?!
+			// commands[0] = strings.TrimRight(commands[0], " ") // if it's the first command and there are multiples, there wouldn't be a newline, right?!
 			commandHasPipes = true
 
 			for i := 1; i < len(commands); i++ {
-				commands[1] = strings.Trim(commands[1], " ")
+				// commands[1] = strings.Trim(commands[1], " ")
 			}
 
 			DbgPrintf("all commands with all pipes: %v", commands)

@@ -98,7 +98,9 @@ func (redirectToken RedirectToken) String() string {
 func GetNextStartToken(command []rune) IToken {
 	for i, r := range command {
 		switch {
-		case r == 10 && len(command) == 1:
+		case r == '\n' && len(command) == 1:
+			return Token{Position: i, Type: Termination}
+		case r == ' ' && len(command) == 1: // happens with pipes. "xxx⍽|⍽yyy" becomes ["xxx⍽", "⍽yyy"] when it's split on the pipe and the first command "line" ends with a space (instead of a \n which is the case with no pipes)
 			return Token{Position: i, Type: Termination}
 		case r == '\'':
 			return Token{Position: i, Type: SingleQuote}
