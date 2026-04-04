@@ -92,9 +92,6 @@ func __SimpleExampleForPipeImpl() {
 */
 
 func main() {
-	commandHasPipes := false
-	var secondCommand string // very bad! assumes only one pipe!
-	var secondCommandArgs string
 	for {
 		commandsToBeRun := []command{}
 		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
@@ -110,7 +107,6 @@ func main() {
 		if len(commands) > 1 {
 			//				commands[0] = strings.TrimRight(commands[0], " \n") // lets not trim left IN CASE we want to implement the history feature where commands beginning with space are not appendend
 			// commands[0] = strings.TrimRight(commands[0], " ") // if it's the first command and there are multiples, there wouldn't be a newline, right?!
-			commandHasPipes = true
 
 			for i := 1; i < len(commands); i++ {
 				// commands[1] = strings.Trim(commands[1], " ")
@@ -264,66 +260,70 @@ func main() {
 			}
 		}
 		DbgPrintf("Found %d commands: %v\n", len(commandsToBeRun), commandsToBeRun)
-		for _, command := range commandsToBeRun {
-
-			if _builtin, ok := builtins[command.commandName]; ok {
-				_builtin(command.commandArguments, command.commandRedirections)
-				continue
+		if len(commandsToBeRun) > 1 {
+			var cmdsWG sync.WaitGroup
+			type tmpPipe struct {
+				read  *os.File
+				write *os.File
 			}
+			var pipes []tmpPipe
+			for i, command := range commandsToBeRun {
+				r, w, _ := os.Pipe()
+				pipes = append(pipes, tmpPipe{read: r, write: w})
 
-			// maybe we can run it?
-			if _, exists := executableExistsInPath(command.commandName); exists {
-				cmd := exec.Command(command.commandName, command.commandArguments...)
-				DbgPrintf("running command %s with args %v\n", command.commandName, command.commandArguments)
-				if commandHasPipes {
+				if _builtin, ok := builtins[command.commandName]; ok {
+					_builtin(command.commandArguments, command.commandRedirections)
+					continue
+				}
 
-					r, w, _ := os.Pipe()
-					var cmd2 *exec.Cmd
-					secondCommandArgsSlice := strings.FieldsFunc(secondCommandArgs, func(r rune) bool { return r == ' ' })
-					cmd2 = exec.Command(secondCommand, secondCommandArgsSlice...)
-					cmd.Stdout = w
-					cmd2.Stdin = r
-					cmd2.Stdout = os.Stdout
-					cmd2.Stderr = os.Stdout
+				// maybe we can run it?
+				if _, exists := executableExistsInPath(command.commandName); exists {
+					cmd := exec.Command(command.commandName, command.commandArguments...)
+					DbgPrintf("running command %s with args %v\n", command.commandName, command.commandArguments)
 
-					var cmdsWG sync.WaitGroup
+					if i != 0 {
+						command.commandRedirections.in = pipes[i-1].read
+					}
+
+					if i != len(commands)-1 {
+						command.commandRedirections.out = pipes[i].write
+					}
+
+					cmd.Stdin = command.commandRedirections.in
+					cmd.Stdout = command.commandRedirections.out
+					cmd.Stderr = command.commandRedirections.err
 
 					cmdsWG.Add(1)
 					go func(theWG *sync.WaitGroup) {
+						defer pipes[i].read.Close()
+						defer pipes[i].write.Close()
 						defer theWG.Done()
-						defer w.Close()
 
+						DbgPrintf("running %s with stdin: %v -- stdout: %v\n", cmd.Path, cmd.Stdin, cmd.Stdout)
 						c1e := cmd.Run()
 						if c1e != nil {
 							DbgPrintf("cmd error: %s\n", c1e)
 						}
 					}(&cmdsWG)
 
-					cmdsWG.Add(1)
-					go func(theWG *sync.WaitGroup) {
-						defer theWG.Done()
-						defer r.Close()
-
-						c2e := cmd2.Run()
-						if c2e != nil {
-							DbgPrintf("cmd2 error: %s\n", c2e)
-						}
-					}(&cmdsWG)
-
-					cmdsWG.Wait()
-
-				} else {
-					cmd.Stdin = command.commandRedirections.in
-					cmd.Stdout = command.commandRedirections.out
-					cmd.Stderr = command.commandRedirections.err
-					cmd.Run()
 				}
-				commandHasPipes = false
-				secondCommand = ""
-				secondCommandArgs = ""
 				continue
 
 			}
+			cmdsWG.Wait()
+		} else {
+			command := commandsToBeRun[0]
+			switch command.commandType {
+			case builtinCommand:
+				builtins[command.commandName](command.commandArguments, command.commandRedirections)
+			case inPathCommand:
+				cmd := exec.Command(command.commandName, command.commandArguments...)
+				cmd.Stdin = command.commandRedirections.in
+				cmd.Stdout = command.commandRedirections.out
+				cmd.Stderr = command.commandRedirections.err
+				cmd.Run()
+			}
+
 		}
 	}
 }
