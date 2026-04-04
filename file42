@@ -1,0 +1,10 @@
+app
+bin
+codecrafters.yml
+file42
+go.mod
+go.sum
+makefile
+README.md
+todo
+your_program.sh
