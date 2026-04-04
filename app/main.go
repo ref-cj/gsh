@@ -227,10 +227,10 @@ func main() {
 		if len(commandsToBeRun) > 1 {
 			var cmdsWG sync.WaitGroup
 			cmdsWG.Add(len(commandsToBeRun))
-			var pipes []tmpPipe
+			pipes := make([]tmpPipe, len(commandsToBeRun))
 			for i, command := range commandsToBeRun {
 				r, w, _ := os.Pipe()
-				pipes = append(pipes, tmpPipe{read: r, write: w})
+				pipes[i] = tmpPipe{read: r, write: w}
 
 				if _builtin, ok := builtins[command.commandName]; ok {
 					_builtin(command.commandArguments, command.commandRedirections)
