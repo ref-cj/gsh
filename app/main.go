@@ -58,38 +58,10 @@ func init() {
 	}
 }
 
-/*
-func __SimpleExampleForPipeImpl() {
-	cmd := exec.Command("ls", "-lash")
-	cmd2 := exec.Command("grep", "\\s\\.")
-	so, _ := os.Create("dots")
-	r, w, _ := os.Pipe()
-	cmd.Stdout = w
-	cmd2.Stdin = r
-	cmd2.Stdout = so
-
-	var wgPip sync.WaitGroup
-
-	wgPip.Go(func() {
-		if x := cmd2.Start(); x != nil {
-			fmt.Printf("cmd2: err:%v\n", x)
-		}
-		cmd2.Wait()
-		so.Close()
-		r.Close()
-	})
-	wgPip.Go(func() {
-		if y := cmd.Start(); y != nil {
-			fmt.Printf("cmd: err:%v\n", y)
-		}
-		cmd.Wait()
-		w.Close()
-	})
-
-	wgPip.Wait()
-	os.Exit(0)
+type tmpPipe struct {
+	read  *os.File
+	write *os.File
 }
-*/
 
 func main() {
 	for {
@@ -105,15 +77,7 @@ func main() {
 
 		commands := strings.Split(fullInputCommand, "|")
 		if len(commands) > 1 {
-			//				commands[0] = strings.TrimRight(commands[0], " \n") // lets not trim left IN CASE we want to implement the history feature where commands beginning with space are not appendend
-			// commands[0] = strings.TrimRight(commands[0], " ") // if it's the first command and there are multiples, there wouldn't be a newline, right?!
-
-			for i := 1; i < len(commands); i++ {
-				// commands[1] = strings.Trim(commands[1], " ")
-			}
-
 			DbgPrintf("all commands with all pipes: %v", commands)
-
 		}
 
 		Terminal.Cookify() // revert changes we did for raw mode
@@ -262,10 +226,7 @@ func main() {
 		DbgPrintf("Found %d commands: %v\n", len(commandsToBeRun), commandsToBeRun)
 		if len(commandsToBeRun) > 1 {
 			var cmdsWG sync.WaitGroup
-			type tmpPipe struct {
-				read  *os.File
-				write *os.File
-			}
+			cmdsWG.Add(len(commandsToBeRun))
 			var pipes []tmpPipe
 			for i, command := range commandsToBeRun {
 				r, w, _ := os.Pipe()
@@ -285,7 +246,7 @@ func main() {
 						command.commandRedirections.in = pipes[i-1].read
 					}
 
-					if i != len(commands)-1 {
+					if i != len(commandsToBeRun)-1 {
 						command.commandRedirections.out = pipes[i].write
 					}
 
@@ -293,7 +254,6 @@ func main() {
 					cmd.Stdout = command.commandRedirections.out
 					cmd.Stderr = command.commandRedirections.err
 
-					cmdsWG.Add(1)
 					go func(theWG *sync.WaitGroup) {
 						defer pipes[i].read.Close()
 						defer pipes[i].write.Close()
