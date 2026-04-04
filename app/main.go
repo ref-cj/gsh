@@ -265,10 +265,7 @@ func main() {
 							DbgPrintf("cmd error: %s\n", c1e)
 						}
 					}(&cmdsWG)
-
 				}
-				continue
-
 			}
 			cmdsWG.Wait()
 		} else {
