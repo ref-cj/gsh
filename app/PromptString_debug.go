@@ -19,7 +19,7 @@ const (
 	clrShell       = "\033[38;2;235;203;139m"
 	clrData1       = "\033[38;2;163;190;140m"
 	clrData2       = "\033[38;2;94;129;172m"
-	clrConnector   = "\033[38;2;129;161;193m"
+	clrConnector   = "\033[38;2;174;159;158m"
 	space          = " "
 )
 const numberOfPathSegmentsToShow = 2
