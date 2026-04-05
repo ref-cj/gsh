@@ -215,7 +215,6 @@ func main() {
 					} else {
 						commandType = oopsCommand
 						fmt.Fprintf(os.Stdout, "%s: command not found\n", outputCommandName)
-						os.Exit(commandUsageError)
 					}
 				}
 
