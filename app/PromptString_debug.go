@@ -19,7 +19,7 @@ const (
 	clrShell       = "\033[38;2;235;203;139m"
 	clrData1       = "\033[38;2;163;190;140m"
 	clrData2       = "\033[38;2;94;129;172m"
-	clrConnector   = "\033[38;2;174;159;158m"
+	clrConnector   = "\033[1;38;2;174;159;158m"
 	space          = " "
 )
 const numberOfPathSegmentsToShow = 2
@@ -30,6 +30,7 @@ var (
 )
 
 func init() {
+	// testConnectors := []rune("→ ⊇ ⋁ ⊻ ⋎ ⋲ 🜉 🜞 🝣 🝧 ")
 	currentUser, err := user.Current()
 	if err != nil {
 		panic("couldn't get user")
@@ -62,7 +63,7 @@ func GetPS1() string {
 	return space + clrBookEnd + "🙝" + reset + space + space +
 		clrPunctuation + "[" + reset + clrShell + "gsh" + reset + clrPunctuation + "]" + reset + space +
 		clrData1 + userName + reset + clrPunctuation + "@" + reset + clrData1 + hostName + reset + space +
-		clrConnector + "→" + reset + space + clrData2 + pathSegmentToShow + reset + space +
+		clrConnector + "⊇" + reset + space + clrData2 + pathSegmentToShow + reset + space +
 		clrBookEnd + "🙞" + reset + space + space
 }
 
