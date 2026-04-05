@@ -5,15 +5,16 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
 func DbgPrintf(format string, dumpee ...any) {
-	fmt.Printf(format, dumpee...)
+	fmt.Fprintf(os.Stderr, format, dumpee...)
 }
 
 func DbgPrintln(a any) {
-	fmt.Println(a)
+	fmt.Fprintln(os.Stderr, a)
 }
 
 func DbgPrintTokenln(message string, token IToken, runeAtPosition rune) {
