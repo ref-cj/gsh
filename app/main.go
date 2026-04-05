@@ -64,6 +64,7 @@ type tmpPipe struct {
 }
 
 func main() {
+begin:
 	for {
 		commandsToBeRun := []command{}
 		// TODO: we should have a "last command (parsing/)execution took n milliseconds metric"
@@ -215,6 +216,7 @@ func main() {
 					} else {
 						commandType = oopsCommand
 						fmt.Fprintf(os.Stdout, "%s: command not found\n", outputCommandName)
+						continue begin // both bash and zsh dont run anything there. Just report the error and take input again
 					}
 				}
 
