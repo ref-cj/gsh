@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Did not use iota here because I wanted the error codes to be stable
@@ -248,6 +249,7 @@ begin:
 						defer DbgPrintln("pipes should be gone")
 						defer theWG.Done()
 						DbgPrintf("Running builtin:%s with stdin: %v -- stdout: %v\n", _builtin, command.commandRedirections.in, command.commandRedirections.out)
+						time.Sleep(100 * time.Millisecond)
 
 						_builtin(command.commandArguments, command.commandRedirections)
 						DbgPrintf("runned the builtin friend. will close them pipes now")
