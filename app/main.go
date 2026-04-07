@@ -233,23 +233,32 @@ begin:
 				r, w, _ := os.Pipe()
 				pipes[i] = tmpPipe{read: r, write: w}
 
+				if i != 0 {
+					command.commandRedirections.in = pipes[i-1].read
+				}
+
+				if i != len(commandsToBeRun)-1 {
+					command.commandRedirections.out = pipes[i].write
+				}
+
 				if _builtin, ok := builtins[command.commandName]; ok {
-					_builtin(command.commandArguments, command.commandRedirections)
-					continue
+					go func(theWG *sync.WaitGroup) {
+						defer pipes[i].read.Close()
+						defer pipes[i].write.Close()
+						defer DbgPrintln("pipes should be gone")
+						defer theWG.Done()
+						DbgPrintf("Running builtin:%s with stdin: %v -- stdout: %v\n", _builtin, command.commandRedirections.in, command.commandRedirections.out)
+
+						_builtin(command.commandArguments, command.commandRedirections)
+						DbgPrintf("runned the builtin friend. will close them pipes now")
+					}(&cmdsWG)
+					continue // go to the next command, dont go further and check if this command can also be found in the path
 				}
 
 				// maybe we can run it?
 				if _, exists := executableExistsInPath(command.commandName); exists {
 					cmd := exec.Command(command.commandName, command.commandArguments...)
 					DbgPrintf("running command %s with args %v\n", command.commandName, command.commandArguments)
-
-					if i != 0 {
-						command.commandRedirections.in = pipes[i-1].read
-					}
-
-					if i != len(commandsToBeRun)-1 {
-						command.commandRedirections.out = pipes[i].write
-					}
 
 					cmd.Stdin = command.commandRedirections.in
 					cmd.Stdout = command.commandRedirections.out
