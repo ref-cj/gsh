@@ -272,9 +272,9 @@ begin:
 						defer theWG.Done()
 
 						DbgPrintf("running %s with stdin: %v -- stdout: %v\n", cmd.Path, cmd.Stdin, cmd.Stdout)
-						c1e := cmd.Run()
-						if c1e != nil {
-							DbgPrintf("cmd error: %s\n", c1e)
+						cmdError := cmd.Run()
+						if cmdError != nil {
+							DbgPrintf("cmd error: %s\n", cmdError)
 						}
 					}(&cmdsWG)
 				}
