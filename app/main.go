@@ -206,7 +206,7 @@ begin:
 					}
 				}
 
-				DbgPrintf("We are done, done. Nothing else to process.\n")
+				DbgPrintf("We are done, done. No more input to process.\n")
 				outputCommandName := outputCommandFields[0]
 				var commandType commandType
 				if _, ok := builtins[outputCommandName]; ok {
@@ -246,13 +246,13 @@ begin:
 					go func(theWG *sync.WaitGroup) {
 						defer pipes[i].read.Close()
 						defer pipes[i].write.Close()
-						defer DbgPrintln("pipes should be gone")
+						defer DbgPrintln("pipes should be gone\n")
 						defer theWG.Done()
 						DbgPrintf("Running builtin:%s with stdin: %v -- stdout: %v\n", _builtin, command.commandRedirections.in, command.commandRedirections.out)
 						time.Sleep(100 * time.Millisecond)
 
 						_builtin(command.commandArguments, command.commandRedirections)
-						DbgPrintf("runned the builtin friend. will close them pipes now")
+						DbgPrintf("runned the builtin friend. will close them pipes now\n")
 					}(&cmdsWG)
 					continue // go to the next command, dont go further and check if this command can also be found in the path
 				}
