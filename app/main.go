@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -312,16 +313,12 @@ func cd(params []string, _ redirections) {
 		}
 	}
 	if err := os.Chdir(params[0]); err != nil {
-		fmt.Printf("cd: %s: No such file or directory\n", params[0])
-		// I'm sad I can't use this. Tests don't like that err starts with a lowercase 'n'
-		/*
-			var pathError *os.PathError
-			if errors.As(err, &pathError) {
-				fmt.Printf("cd: %s: %s\n", pathError.Path, pathError.Err)
-			} else {
-				return
-			}
-		*/
+		var pathError *os.PathError
+		if errors.As(err, &pathError) {
+			fmt.Printf("cd: %s: No such file or directory\n", pathError.Path)
+		}
+		// The docs for os.Chdir() say "If there is an error, it will be of type *PathError"
+		// so if it's anything else we should probably let it "bubble up"
 	}
 }
 
