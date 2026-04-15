@@ -299,7 +299,6 @@ begin:
 }
 
 func echo(params []string, redirs redirections) {
-	// fmt.Println(strings.Join(params, " "))
 	fmt.Fprintln(redirs.out, strings.Join(params, " "))
 }
 
